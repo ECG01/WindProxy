@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.py[cod]
+logs/
+.DS_Store
+
+# Generated operational products; recreated by the polling job.
+data/operational/
+
+# Research inputs, outputs, and notebooks are not part of the deployable service.
+experimental/
+
+# Superseded code and completed studies, kept locally for provenance.
+deprecated/
+
+# Journal PDFs are not redistributed from this repository.
+literature/

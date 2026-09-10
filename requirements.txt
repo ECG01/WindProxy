@@ -1,0 +1,5 @@
+numpy>=1.26,<3
+scipy>=1.11,<2
+xarray>=2024.1
+netCDF4>=1.6
+pycoare>=0.3
