@@ -3,62 +3,71 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
-  --bg:#f5f8fa; --panel:#ffffff; --ink:#0f1a22; --ink-2:#4a5a66; --muted:#7a8995;
+  --bg:#f5f8fa; --panel:#ffffff; --ink:#0f1a22; --ink-2:#4a5a66; --muted:#6f7f8b;
   --grid:#e2e8ed; --axis:#b9c4cc; --line:#dbe3e9;
-  --s1:#2a78d6; --ref:#eb6834; --warn-bg:#fff4e0; --warn-ink:#7a4a00; --warn-dot:#eda100;
+  --s1:#2a78d6; --s2:#eb6834; --ref:#8a98a3; --warn-bg:#fff4e0; --warn-ink:#7a4a00; --warn-dot:#eda100;
   --good:#1a7f37; --q:#9a6700; --bad:#c62828;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
-    --bg:#0e151b; --panel:#151f27; --ink:#eef3f6; --ink-2:#a8b7c2; --muted:#7f8f9b;
+    --bg:#0e151b; --panel:#151f27; --ink:#eef3f6; --ink-2:#a8b7c2; --muted:#8595a1;
     --grid:#223039; --axis:#3a4a55; --line:#26343e;
-    --s1:#3987e5; --ref:#d95926; --warn-bg:#2e2410; --warn-ink:#f2c46b; --warn-dot:#c98500;
+    --s1:#3987e5; --s2:#d95926; --ref:#6b7b87; --warn-bg:#2e2410; --warn-ink:#f2c46b; --warn-dot:#c98500;
     --good:#4cc26a; --q:#e0b04a; --bad:#ef6b6b;
   }
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#0e151b; --panel:#151f27; --ink:#eef3f6; --ink-2:#a8b7c2; --muted:#7f8f9b;
+  --bg:#0e151b; --panel:#151f27; --ink:#eef3f6; --ink-2:#a8b7c2; --muted:#8595a1;
   --grid:#223039; --axis:#3a4a55; --line:#26343e;
-  --s1:#3987e5; --ref:#d95926; --warn-bg:#2e2410; --warn-ink:#f2c46b; --warn-dot:#c98500;
+  --s1:#3987e5; --s2:#d95926; --ref:#6b7b87; --warn-bg:#2e2410; --warn-ink:#f2c46b; --warn-dot:#c98500;
   --good:#4cc26a; --q:#e0b04a; --bad:#ef6b6b;
 }
 body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.5}
-.wrap{max-width:1040px;margin:0 auto;padding:28px 16px 48px;display:flex;flex-direction:column;gap:20px}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 16px 48px;display:flex;flex-direction:column;gap:20px}
 .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
 header{display:flex;flex-direction:column;gap:4px}
 .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 h1{font-size:28px;font-weight:600;margin:0;text-wrap:balance;letter-spacing:-.01em}
-.sub{color:var(--ink-2);margin:0;max-width:68ch}
+.sub{color:var(--ink-2);margin:0;max-width:72ch}
 .notice{display:flex;gap:10px;align-items:flex-start;background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:10px 14px;font-size:14px}
 .notice .dot{width:9px;height:9px;border-radius:50%;background:var(--warn-dot);margin-top:6px;flex:none}
-.readout{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px 20px}
-.readout .k{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.readout{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px 20px}
+.readout .k{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px}
 .readout .v{font-size:20px;font-weight:500}
 .readout .v small{font-size:13px;color:var(--ink-2);font-weight:400;margin-left:3px}
 .readout .when{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:13px;color:var(--ink-2);border-top:1px solid var(--line);padding-top:8px}
 .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid currentColor}
 .pill.good{color:var(--good)} .pill.questionable{color:var(--q)} .pill.rejected{color:var(--bad)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 14px 8px}
+.panel h2{font-size:15px;font-weight:600;margin:0}
+.panel .hint{font-size:13px;color:var(--ink-2);margin:2px 0 8px;max-width:72ch}
+.panel svg{display:block;width:100%;height:auto;touch-action:pan-y}
+.panel text{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;fill:var(--muted)}
+.valid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px}
+@media (max-width:760px){.valid{grid-template-columns:1fr}}
+.stats{width:100%;border-collapse:collapse;font-size:14px;margin-top:4px}
+.stats th,.stats td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.stats th:first-child,.stats td:first-child{text-align:left}
+.stats th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.stats-wrap{overflow-x:auto}
+.caveat{font-size:13px;color:var(--ink-2);margin:10px 0 4px}
 .charts{display:flex;flex-direction:column;gap:14px}
-.chart{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 14px 6px}
-.chart h2{font-size:15px;font-weight:600;margin:0}
-.chart .hint{font-size:13px;color:var(--ink-2);margin:2px 0 6px}
-.chart svg{display:block;width:100%;height:auto;touch-action:pan-y}
-.chart text{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;fill:var(--muted)}
 .legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink-2)}
 .legend span{display:inline-flex;align-items:center;gap:7px}
-.sw{width:10px;height:10px;border-radius:50%;background:var(--s1);display:inline-block}
-.sw.hollow{background:var(--panel);border:2px solid var(--s1);width:10px;height:10px;box-sizing:border-box}
+.sw{width:10px;height:10px;border-radius:50%;background:var(--s1);display:inline-block;flex:none}
+.sw.hollow{background:var(--panel);border:2px solid var(--s1);box-sizing:border-box}
+.sw.obs{background:var(--s2);width:16px;height:3px;border-radius:2px}
 .sw.dash{width:18px;height:0;border-radius:0;border-top:2px dashed var(--ref);background:none}
 details{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
 summary{cursor:pointer;font-weight:500}
 summary:focus-visible{outline:2px solid var(--s1);outline-offset:3px;border-radius:4px}
 .tbl{overflow-x:auto;margin-top:10px;max-height:420px;overflow-y:auto}
-table{border-collapse:collapse;font-size:13px;width:100%}
-th,td{text-align:left;padding:5px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
-th{position:sticky;top:0;background:var(--panel);color:var(--muted);font-weight:500;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
-td.num{text-align:right}
+table.rows{border-collapse:collapse;font-size:13px;width:100%}
+.rows th,.rows td{text-align:left;padding:5px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.rows th{position:sticky;top:0;background:var(--panel);color:var(--muted);font-weight:500;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.rows td.num{text-align:right}
 footer{font-size:12px;color:var(--muted)}
 @media (max-width:520px){h1{font-size:23px}.readout .v{font-size:17px}}
 </style>
@@ -67,72 +76,117 @@ footer{font-size:12px;color:var(--muted)}
   <header>
     <div class="eyebrow">WindProxy · CDIP __STATION_ID__ · __STATION_NAME__, Puerto Rico</div>
     <h1>__STATION_NAME__ Buoy Winds</h1>
-    <p class="sub">Neutral 10&nbsp;m wind estimated from the equilibrium tail of the buoy's wave spectrum, <span id="span"></span>. Times are UTC.</p>
+    <p class="sub">Neutral 10&nbsp;m wind estimated from the buoy's wave spectrum, checked against the <span id="obs-name"></span> weather station<span id="span"></span>. Times are UTC.</p>
   </header>
 
 __NOTICES__
   <section class="readout" aria-live="polite">
-    <div><div class="k">Wind speed U10</div><div class="v mono" id="r-u"></div></div>
-    <div><div class="k">Wind from</div><div class="v mono" id="r-d"></div></div>
+    <div><div class="k"><i class="sw"></i>Buoy U10</div><div class="v mono" id="r-u"></div></div>
+    <div><div class="k"><i class="sw obs"></i>Station wind</div><div class="v mono" id="r-su"></div></div>
+    <div><div class="k"><i class="sw"></i>Buoy wind from</div><div class="v mono" id="r-d"></div></div>
+    <div><div class="k"><i class="sw obs"></i>Station wind from</div><div class="v mono" id="r-sd"></div></div>
     <div><div class="k">Wave height Hs</div><div class="v mono" id="r-hs"></div></div>
-    <div><div class="k">Peak period</div><div class="v mono" id="r-tp"></div></div>
     <div class="when"><span class="mono" id="r-t"></span><span id="r-qc"></span><span id="r-why"></span></div>
   </section>
 
+  <section class="valid">
+    <div class="panel">
+      <h2>Validation against the station</h2>
+      <p class="hint">Station readings averaged over each 30-minute buoy sample. Bias is buoy minus station.</p>
+      <div class="stats-wrap"><table class="stats" id="stats"></table></div>
+      <p class="caveat" id="caveat"></p>
+    </div>
+    <div class="panel">
+      <h2>Buoy vs station wind speed</h2>
+      <p class="hint">m/s. Points on the diagonal agree exactly.</p>
+      <svg id="c-sc" role="img" aria-label="Scatter of buoy estimated wind speed against station observed wind speed"></svg>
+    </div>
+  </section>
+
   <div class="legend">
-    <span><i class="sw"></i>QC good</span>
-    <span><i class="sw hollow"></i>QC questionable</span>
-    <span><i class="sw dash"></i>7 m/s: direction is reliable above this speed</span>
+    <span><i class="sw"></i>Buoy estimate, QC good</span>
+    <span><i class="sw hollow"></i>Buoy estimate, QC questionable</span>
+    <span><i class="sw obs"></i><span id="lg-obs">Station observation</span></span>
+    <span><i class="sw dash"></i>7 m/s: buoy direction is reliable above this</span>
   </div>
 
   <div class="charts">
-    <section class="chart"><h2>Wind speed</h2><p class="hint">Neutral U10, m/s. Rejected records leave a gap.</p><svg id="c-u" role="img" aria-label="Wind speed over time"></svg></section>
-    <section class="chart"><h2>Wind direction</h2><p class="hint">Degrees true the wind blows from. Low confidence below 7 m/s.</p><svg id="c-d" role="img" aria-label="Wind direction over time"></svg></section>
-    <section class="chart"><h2>Significant wave height</h2><p class="hint">Hs, metres, all records.</p><svg id="c-hs" role="img" aria-label="Significant wave height over time"></svg></section>
+    <section class="panel"><h2>Wind speed</h2><p class="hint">m/s. Buoy neutral U10 against raw station readings. Rejected buoy records leave a gap.</p><svg id="c-u" role="img" aria-label="Wind speed over time"></svg></section>
+    <section class="panel"><h2>Wind direction</h2><p class="hint">Degrees true the wind blows from.</p><svg id="c-d" role="img" aria-label="Wind direction over time"></svg></section>
+    <section class="panel"><h2>Significant wave height</h2><p class="hint">Hs from the buoy, metres, all records.</p><svg id="c-hs" role="img" aria-label="Significant wave height over time"></svg></section>
   </div>
 
   <details>
-    <summary>Table view (<span id="n"></span> records)</summary>
-    <div class="tbl"><table>
-      <thead><tr><th>Time UTC</th><th>U10 m/s</th><th>From °</th><th>Hs m</th><th>Tp s</th><th>QC</th><th>Reason</th></tr></thead>
+    <summary>Table view (<span id="n"></span> buoy records)</summary>
+    <div class="tbl"><table class="rows">
+      <thead><tr><th>Time UTC</th><th>Buoy U10</th><th>Station</th><th>Buoy from °</th><th>Station from °</th><th>Hs m</th><th>QC</th><th>Reason</th></tr></thead>
       <tbody id="tb"></tbody>
     </table></div>
   </details>
 
-  <footer>Generated __GEN__ from <span class="mono">__SOURCE__</span>. Method: Mudd et al. (2024), Voermans et al. (2020). Wave data: CDIP, Scripps Institution of Oceanography.</footer>
+  <footer>Generated __GEN__ from <span class="mono">__SOURCE__</span> and <span class="mono" id="obs-url"></span>. Method: Mudd et al. (2024), Voermans et al. (2020). Wave data: CDIP, Scripps Institution of Oceanography. Station data: CARICOOS.</footer>
 </div>
 
 <script>
 const DATA = __DATA__;
-const rows = DATA.map(r => ({...r, ms: Date.parse(r.t)}));
-const t0 = rows[0].ms, t1 = rows[rows.length-1].ms;
+const rows = DATA.buoy.map((r,i) => ({...r, ms: Date.parse(r.t), m: DATA.matched[i] || {}}));
+const obs = (DATA.obs || []).map(o => ({...o, ms: Date.parse(o.t)}));
+const META = DATA.meta || {};
+const allMs = rows.map(r=>r.ms).concat(obs.map(o=>o.ms));
+const t0 = Math.min(...allMs), t1 = Math.max(...allMs);
 const NS = "http://www.w3.org/2000/svg";
 const COMPASS = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
 const compass = d => COMPASS[Math.round(d/22.5)%16];
-const fmtT = ms => { const d=new Date(ms); return d.toISOString().slice(5,16).replace("T"," "); };
 const fmtN = (v,p) => v==null ? "—" : v.toFixed(p);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+const iso = ms => new Date(ms).toISOString().slice(0,16).replace("T"," ");
 
-document.getElementById("span").textContent =
-  new Date(t0).toISOString().slice(0,16).replace("T"," ") + " to " + new Date(t1).toISOString().slice(0,16).replace("T"," ");
+document.getElementById("obs-name").textContent = META.name || "nearest";
+document.getElementById("lg-obs").textContent = (META.name || "Station") + " observation";
+document.getElementById("obs-url").textContent = META.url || "no station data";
+document.getElementById("span").textContent = isFinite(t0) ? ", " + iso(t0) + " to " + iso(t1) : "";
 document.getElementById("n").textContent = rows.length;
 
-const umax = Math.max(8, Math.ceil(Math.max(...rows.map(r=>r.u||0))+1));
-const hmax = Math.ceil((Math.max(...rows.map(r=>r.hs||0))+0.1)*5)/5;
-const CHARTS = [
-  {id:"c-u", key:"u", min:0, max:umax, ticks:range(0,umax,2), fmt:v=>v, line:true, dots:true, ref:7},
-  {id:"c-d", key:"d", min:0, max:360, ticks:[0,90,180,270,360], fmt:v=>["N","E","S","W","N"][v/90]+" "+v+"°", line:false, dots:true},
-  {id:"c-hs", key:"hs", min:0, max:hmax, ticks:range(0,hmax+1e-9,hmax>1?0.5:0.2), fmt:v=>+v.toFixed(1), line:true, dots:false},
-];
-function range(a,b,s){const o=[];for(let v=a;v<=b+1e-9;v+=s)o.push(+v.toFixed(6));return o;}
+// Validation table
+(function(){
+  const S = DATA.stats || {};
+  const line = (label, s, unit, r) => s ? `<tr><td>${label}</td><td class="mono">${s.n}</td><td class="mono">${(s.bias>=0?"+":"")+s.bias.toFixed(r)} ${unit}</td><td class="mono">${s.rmse.toFixed(r)} ${unit}</td><td class="mono">${s.r==null||!isFinite(s.r)?"—":s.r.toFixed(2)}</td></tr>` : `<tr><td>${label}</td><td class="mono">0</td><td>—</td><td>—</td><td>—</td></tr>`;
+  document.getElementById("stats").innerHTML =
+    `<thead><tr><th>Comparison</th><th>N</th><th>Bias</th><th>RMSE</th><th>r</th></tr></thead><tbody>` +
+    line("Speed, QC good", S.speed_good, "m/s", 2) +
+    line("Speed, all published", S.speed_all, "m/s", 2) +
+    line("Direction, all published", S.direction_all, "°", 0) + `</tbody>`;
+  document.getElementById("caveat").textContent =
+    (META.error ? "Station data could not be read: " + META.error + ". " : "") +
+    "The station is a land anemometer (" + (META.height || "height unknown") +
+    "), not open-water wind at 10 m, so a steady offset is expected. Agreement in timing and trend matters as much as the absolute level.";
+})();
 
+const umax = Math.max(8, Math.ceil(Math.max(0, ...rows.map(r=>r.u||0), ...obs.map(o=>o.u||0)) + 1));
+const hmax = Math.max(0.4, Math.ceil((Math.max(0, ...rows.map(r=>r.hs||0))+0.1)*5)/5);
+function range(a,b,s){const o=[];for(let v=a;v<=b+1e-9;v+=s)o.push(+v.toFixed(6));return o;}
+const CHARTS = [
+  {id:"c-u", key:"u", obsKey:"u", min:0, max:umax, ticks:range(0,umax,umax>12?4:2), fmt:v=>v, line:true, dots:true, ref:7},
+  {id:"c-d", key:"d", obsKey:"d", min:0, max:360, ticks:[0,90,180,270,360], fmt:v=>["N","E","S","W","N"][v/90]+" "+v+"°", line:false, dots:true},
+  {id:"c-hs", key:"hs", obsKey:null, min:0, max:hmax, ticks:range(0,hmax+1e-9,hmax>1?0.5:0.2), fmt:v=>+v.toFixed(1), line:true, dots:false},
+];
 const M = {l:58, r:14, t:10, b:26};
 let state = [];
-
 function el(tag, attrs, parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.appendChild(e); return e; }
+function pathOf(list, key, x, y, gapMs){
+  let d="", prev=null;
+  for(const r of list){
+    const v=r[key];
+    if(v==null || r.qc==="rejected"){ prev=null; continue; }
+    d += (prev!=null && r.ms-prev<=gapMs ? "L" : "M") + x(r.ms).toFixed(1)+","+y(v).toFixed(1);
+    prev=r.ms;
+  }
+  return d;
+}
 
 function draw(){
   state = [];
+  if(!isFinite(t0) || t1<=t0) return;
   for(const c of CHARTS){
     const svg = document.getElementById(c.id);
     const W = Math.max(300, svg.parentElement.clientWidth - 28), H = W < 520 ? 170 : 200;
@@ -141,28 +195,21 @@ function draw(){
     const y = v => H-M.b - (v-c.min)/(c.max-c.min)*(H-M.t-M.b);
     for(const tv of c.ticks){
       el("line",{x1:M.l,x2:W-M.r,y1:y(tv),y2:y(tv),stroke:tv===c.min?"var(--axis)":"var(--grid)","stroke-width":1},svg);
-      const tx=el("text",{x:M.l-8,y:y(tv)+4,"text-anchor":"end"},svg); tx.textContent=c.fmt(tv);
+      el("text",{x:M.l-8,y:y(tv)+4,"text-anchor":"end"},svg).textContent=c.fmt(tv);
     }
-    // x ticks at 00 and 12 UTC
-    const step = 12*3600e3; let first = Math.ceil(t0/step)*step;
-    for(let ms=first; ms<=t1; ms+=step){
+    const days = (t1-t0)/86400e3, step = (days>10?48:days>4?24:12)*3600e3;
+    for(let ms=Math.ceil(t0/step)*step; ms<=t1; ms+=step){
       el("line",{x1:x(ms),x2:x(ms),y1:M.t,y2:H-M.b,stroke:"var(--grid)","stroke-width":1},svg);
-      const d=new Date(ms); const lab = d.getUTCHours()===0 ? d.toISOString().slice(5,10) : "12:00";
-      const tx=el("text",{x:x(ms),y:H-8,"text-anchor":"middle"},svg); tx.textContent=lab;
+      const d=new Date(ms);
+      el("text",{x:x(ms),y:H-8,"text-anchor":"middle"},svg).textContent = d.getUTCHours()===0 ? d.toISOString().slice(5,10) : "12:00";
     }
-    if(c.ref!=null){
-      el("line",{x1:M.l,x2:W-M.r,y1:y(c.ref),y2:y(c.ref),stroke:"var(--ref)","stroke-width":1.5,"stroke-dasharray":"5 4"},svg);
+    if(c.ref!=null) el("line",{x1:M.l,x2:W-M.r,y1:y(c.ref),y2:y(c.ref),stroke:"var(--ref)","stroke-width":1.5,"stroke-dasharray":"5 4"},svg);
+    if(c.obsKey==="u"){
+      el("path",{d:pathOf(obs,"u",x,y,3600e3),fill:"none",stroke:"var(--s2)","stroke-width":1.5,"stroke-linejoin":"round",opacity:.9},svg);
+    } else if(c.obsKey==="d"){
+      for(const o of obs) if(o.d!=null) el("circle",{cx:x(o.ms),cy:y(o.d),r:2,fill:"var(--s2)",opacity:.75},svg);
     }
-    if(c.line){
-      let d="", prev=null;
-      for(const r of rows){
-        const v=r[c.key];
-        if(v==null || (c.key==="u" && r.qc==="rejected")){ prev=null; continue; }
-        d += (prev && r.ms-prev<=3600e3 ? "L" : "M") + x(r.ms).toFixed(1)+","+y(v).toFixed(1);
-        prev=r.ms;
-      }
-      el("path",{d,fill:"none",stroke:"var(--s1)","stroke-width":2,"stroke-linejoin":"round","stroke-linecap":"round"},svg);
-    }
+    if(c.line) el("path",{d:pathOf(rows,c.key,x,y,3600e3),fill:"none",stroke:"var(--s1)","stroke-width":2,"stroke-linejoin":"round","stroke-linecap":"round"},svg);
     if(c.dots){
       for(const r of rows){
         const v=r[c.key]; if(v==null || r.qc==="rejected") continue;
@@ -171,44 +218,67 @@ function draw(){
       }
     }
     const cross = el("line",{y1:M.t,y2:H-M.b,stroke:"var(--ink-2)","stroke-width":1,opacity:0},svg);
-    const mark = el("circle",{r:5,fill:"var(--s1)",stroke:"var(--panel)","stroke-width":2,opacity:0},svg);
     const hit = el("rect",{x:M.l,y:0,width:W-M.l-M.r,height:H,fill:"transparent"},svg);
-    const pick = ev => {
-      const p = svg.getBoundingClientRect(); const px = (ev.clientX-p.left)*W/p.width;
-      const ms = t0 + (px-M.l)/(W-M.l-M.r)*(t1-t0);
-      let best=0; for(let i=1;i<rows.length;i++) if(Math.abs(rows[i].ms-ms)<Math.abs(rows[best].ms-ms)) best=i;
-      focus(best);
-    };
+    const pick = ev => { const p = svg.getBoundingClientRect(); focus(t0 + ((ev.clientX-p.left)*W/p.width-M.l)/(W-M.l-M.r)*(t1-t0)); };
     hit.addEventListener("pointermove", pick);
     hit.addEventListener("pointerdown", pick);
-    hit.addEventListener("pointerleave", ()=>focus(rows.length-1, true));
-    state.push({c,x,y,cross,mark});
+    hit.addEventListener("pointerleave", ()=>focus(null));
+    state.push({x,cross});
   }
-  focus(rows.length-1, true);
+  drawScatter();
+  focus(null);
 }
 
-function focus(i, rest){
-  const r = rows[i];
-  for(const s of state){
-    const v = r[s.c.key];
-    s.cross.setAttribute("x1",s.x(r.ms)); s.cross.setAttribute("x2",s.x(r.ms));
-    s.cross.setAttribute("opacity", rest?0:0.6);
-    const show = v!=null && !(r.qc==="rejected" && s.c.key!=="hs");
-    s.mark.setAttribute("cx",s.x(r.ms)); s.mark.setAttribute("cy",show?s.y(v):0);
-    s.mark.setAttribute("opacity", show?1:0);
+function drawScatter(){
+  const svg = document.getElementById("c-sc");
+  const W = Math.max(260, svg.parentElement.clientWidth - 28), H = Math.min(W, 300);
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.innerHTML = "";
+  const pts = rows.filter(r=>r.u!=null && r.qc!=="rejected" && r.m.u!=null);
+  const top = Math.max(4, Math.ceil(Math.max(0, ...pts.map(r=>Math.max(r.u, r.m.u))) + 0.5));
+  const L=42, B=34, T=10, R=12, side = Math.min(W-L-R, H-T-B);
+  const x = v => L + v/top*side, y = v => T + side - v/top*side;
+  const ticks = range(0, top, top>12?4:top>6?2:1);
+  for(const tv of ticks){
+    el("line",{x1:x(0),x2:x(top),y1:y(tv),y2:y(tv),stroke:tv===0?"var(--axis)":"var(--grid)"},svg);
+    el("line",{x1:x(tv),x2:x(tv),y1:y(0),y2:y(top),stroke:tv===0?"var(--axis)":"var(--grid)"},svg);
+    el("text",{x:L-6,y:y(tv)+4,"text-anchor":"end"},svg).textContent=tv;
+    el("text",{x:x(tv),y:y(0)+15,"text-anchor":"middle"},svg).textContent=tv;
   }
-  const rej = r.qc==="rejected";
+  el("line",{x1:x(0),y1:y(0),x2:x(top),y2:y(top),stroke:"var(--ref)","stroke-width":1.5,"stroke-dasharray":"5 4"},svg);
+  el("text",{x:x(top/2),y:H-4,"text-anchor":"middle"},svg).textContent="Station m/s";
+  const yl = el("text",{x:12,y:y(top/2),"text-anchor":"middle",transform:`rotate(-90 12 ${y(top/2)})`},svg); yl.textContent="Buoy U10 m/s";
+  if(!pts.length){ el("text",{x:x(top/2),y:y(top/2),"text-anchor":"middle"},svg).textContent="No matched records"; return; }
+  for(const r of pts){
+    const good = r.qc==="good";
+    el("circle",{cx:x(r.m.u),cy:y(r.u),r:3.5,fill:good?"var(--s1)":"var(--panel)",stroke:good?"var(--panel)":"var(--s1)","stroke-width":good?1:1.6},svg);
+  }
+}
+
+function nearest(list, ms, maxMs){
+  let best=null, bd=Infinity;
+  for(const r of list){ const d=Math.abs(r.ms-ms); if(d<bd){bd=d;best=r;} }
+  return bd<=maxMs ? best : null;
+}
+
+function focus(ms){
+  const rest = ms==null;
+  const r = rest ? rows[rows.length-1] : nearest(rows, ms, 45*60e3);
+  const at = rest ? (r ? r.ms : t1) : ms;
+  for(const s of state){ s.cross.setAttribute("x1",s.x(at)); s.cross.setAttribute("x2",s.x(at)); s.cross.setAttribute("opacity", rest?0:0.6); }
+  const rej = !r || r.qc==="rejected";
+  const o = r && r.m && (r.m.u!=null || r.m.d!=null) ? r.m : nearest(obs, at, 30*60e3);
   document.getElementById("r-u").innerHTML = rej||r.u==null ? "—" : fmtN(r.u,1)+"<small>m/s</small>";
-  document.getElementById("r-d").innerHTML = rej||r.d==null ? "—" : Math.round(r.d)+"°<small>"+compass(r.d)+(r.dc?" · "+r.dc+" conf.":"")+"</small>";
-  document.getElementById("r-hs").innerHTML = fmtN(r.hs,2)+"<small>m</small>";
-  document.getElementById("r-tp").innerHTML = fmtN(r.tp,1)+"<small>s</small>";
-  document.getElementById("r-t").textContent = (rest?"Latest · ":"")+r.t.replace("T"," ").replace("Z"," UTC");
-  document.getElementById("r-qc").innerHTML = `<span class="pill ${r.qc}">QC ${r.qc}</span>`;
-  document.getElementById("r-why").textContent = r.why ? r.why.replace(/_/g," ") : "";
+  document.getElementById("r-d").innerHTML = rej||r.d==null ? "—" : Math.round(r.d)+"°<small>"+compass(r.d)+"</small>";
+  document.getElementById("r-su").innerHTML = !o||o.u==null ? "—" : fmtN(o.u,1)+"<small>m/s</small>";
+  document.getElementById("r-sd").innerHTML = !o||o.d==null ? "—" : Math.round(o.d)+"°<small>"+compass(o.d)+"</small>";
+  document.getElementById("r-hs").innerHTML = r ? fmtN(r.hs,2)+"<small>m</small>" : "—";
+  document.getElementById("r-t").textContent = (rest?"Latest · ":"") + iso(r ? r.ms : at) + " UTC";
+  document.getElementById("r-qc").innerHTML = r ? `<span class="pill ${esc(r.qc)}">QC ${esc(r.qc)}</span>` : "No buoy record";
+  document.getElementById("r-why").textContent = r && r.why ? r.why.replace(/_/g," ") : "";
 }
 
 document.getElementById("tb").innerHTML = rows.slice().reverse().map(r =>
-  `<tr><td class="mono">${r.t.slice(0,16).replace("T"," ")}</td><td class="num mono">${r.qc==="rejected"?"—":fmtN(r.u,2)}</td><td class="num mono">${r.qc==="rejected"||r.d==null?"—":Math.round(r.d)}</td><td class="num mono">${fmtN(r.hs,2)}</td><td class="num mono">${fmtN(r.tp,1)}</td><td><span class="pill ${r.qc}">${r.qc}</span></td><td>${esc((r.why||"").replace(/_/g," "))}</td></tr>`).join("");
+  `<tr><td class="mono">${iso(r.ms)}</td><td class="num mono">${r.qc==="rejected"?"—":fmtN(r.u,2)}</td><td class="num mono">${fmtN(r.m.u,2)}</td><td class="num mono">${r.qc==="rejected"||r.d==null?"—":Math.round(r.d)}</td><td class="num mono">${r.m.d==null?"—":Math.round(r.m.d)}</td><td class="num mono">${fmtN(r.hs,2)}</td><td><span class="pill ${esc(r.qc)}">${esc(r.qc)}</span></td><td>${esc((r.why||"").replace(/_/g," "))}</td></tr>`).join("");
 
 draw();
 let rt; addEventListener("resize", ()=>{ clearTimeout(rt); rt=setTimeout(draw,120); });

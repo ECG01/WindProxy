@@ -155,23 +155,40 @@ feed had published with a zero wave height or a bad quality flag, and rejected
 one that CDIP has since flagged. A short gap between the end of the archive and
 the start of the real-time window leaves the occasional row unreprocessed.
 
-## Plotting the estimates
+## Plotting and validation
 
-`scripts/build_wind_plot.py` turns the operational CSV into a single
-self-contained HTML page with wind speed, wind direction, and significant wave
-height against time. It uses only the standard library and needs no network, so
-open the result directly in a browser:
+`scripts/build_wind_plot.py` charts the operational CSV against observed wind
+from the nearest CARICOOS weather station, and writes for each buoy:
+
+- `data/operational/wind_plot_<station>.html`: a self-contained interactive page
+  (wind speed, wind direction, significant wave height, a buoy-vs-station
+  scatter, and validation statistics). Open it directly in a browser.
+- `data/operational/wind_plot_<station>.png`: the same figure for reports.
 
 ```sh
+.venv/bin/python -m pip install -r requirements-plot.txt   # once, for the PNG
 .venv/bin/python scripts/build_wind_plot.py
 ```
 
-This writes `data/operational/wind_plot_249p1.html` covering the last seven
-days of Arecibo records. Pass `--station-id 181p1` for Rincon, `--days 0` to plot
-everything, or `--input data/operational/wind_estimates_since_2026.csv` for the
-2026-onward record. Hollow markers are `questionable` records, rejected records
-leave gaps, and the page notes any other station whose latest polling run
-failed.
+| Buoy | Validation station | Notes |
+|---|---|---|
+| Arecibo `249p1` | CARICOOS WindNet AROP4 | 6 minute m/s readings, anemometer 12 m above site; QARTOD suspect and failed readings are dropped |
+| Rincon `181p1` | CARICOOS Tres Palmas `E9889_TPR` | 10 minute Davis readings published in mph and converted to m/s; sensor height not documented |
+
+Station readings are averaged over each 30-minute buoy sample (direction as a
+vector mean) and compared as bias (buoy minus station), RMSE, and correlation,
+separately for `good` records and for every published record. Both stations
+are land anemometers rather than open-water wind at 10 m, so a steady offset
+against the neutral `U10` estimate is expected; timing and trend agreement are
+the more telling check. Station data is read over plain OPeNDAP text with the
+standard library, so only the PNG needs matplotlib.
+
+By default the last seven days are plotted for both buoys. Pass `--station-id
+249p1` for one buoy, `--days 0` for everything, `--input
+data/operational/wind_estimates_since_2026.csv` for the 2026-onward record,
+`--no-png` for HTML only, or `--no-validation` to skip the station fetch. A buoy
+with no recent records, such as one under maintenance, still gets a page of
+station observations with a notice.
 
 ## License and citation
 
