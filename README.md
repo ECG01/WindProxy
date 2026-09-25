@@ -223,6 +223,11 @@ A ten-minute polling interval catches a new 30-minute buoy product shortly
 after CDIP publishes it. The script is idempotent, so polling more frequently
 does not duplicate estimates.
 
+Every run of `scripts/run_operational_wind.sh` updates the estimates and then
+rebuilds the charts, validation, and `index.html` landing page in
+`data/operational/`. A chart failure is logged but never blocks the estimates.
+Set `WINDPROXY_PLOTS=0` to skip the charts.
+
 ```cron
 */10 * * * * /path/to/WindProxy/scripts/run_operational_wind.sh >> /path/to/WindProxy/logs/operational_wind.log 2>&1
 ```
@@ -237,4 +242,38 @@ Install the entry while preserving the existing crontab with:
 
 ```sh
 ./scripts/install_cron.sh
+```
+
+## Publishing with NGINX
+
+Pass a web folder to the installer and every run also copies the landing page,
+charts, figures, and data products (`latest.json`, `status.json`, and both
+CSVs) into it. Each file is replaced atomically, so NGINX never serves a
+half-written page.
+
+```sh
+sudo mkdir -p /var/www/html/windproxy
+sudo chown "$(id -un)" /var/www/html/windproxy
+./scripts/install_cron.sh /var/www/html/windproxy
+```
+
+With NGINX's default site, whose root is `/var/www/html`, the dashboard is then
+live at `http://<host>/windproxy/` with no configuration change. To serve it
+from any other folder, add a location block and reload NGINX:
+
+```nginx
+location /windproxy/ {
+    alias /srv/windproxy/;
+    index index.html;
+    # Products change every ten minutes; make browsers revalidate.
+    add_header Cache-Control "no-cache";
+}
+```
+
+Running the installer again with a different folder, or with none, replaces
+the earlier entry. For a one-off publish without cron, set the variable
+directly:
+
+```sh
+WINDPROXY_WEB_DIR=/var/www/html/windproxy ./scripts/run_operational_wind.sh
 ```

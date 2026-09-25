@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
-from build_wind_plot import load_rows, render, station_notices, validate  # noqa: E402
+from build_wind_plot import load_rows, publish, render, render_index, station_notices, validate  # noqa: E402
 from validation_wind import (  # noqa: E402
     Observations,
     angle_difference,
@@ -106,6 +106,32 @@ class BuildWindPlotTests(unittest.TestCase):
         self.assertAlmostEqual(stats["speed_all"]["bias"], 0.0)
         self.assertIsNone(stats["speed_good"])
         self.assertAlmostEqual(stats["direction_all"]["bias"], 10.0)
+
+    def test_index_and_publish(self):
+        (self.dir / "latest.json").write_text(json.dumps({"stations": {"249p1": {
+            "estimated_u10_m_s": 5.31, "estimated_wind_direction_deg_from": 61.0,
+            "time_utc": "2026-09-25T17:30:00Z", "qc_status": "good", "is_stale": False,
+            "direction_confidence": "low"}}}))
+        (self.dir / "status.json").write_text(json.dumps({"run_at_utc": "2026-09-25T18:23:12Z", "stations": {
+            "181p1": {"error": "file not found"}}}))
+        (self.dir / "wind_plot_249p1.html").write_text("page")
+        pages = [
+            {"station_id": "249p1", "station_name": "Arecibo", "html": "wind_plot_249p1.html", "png": None,
+             "stats": {"speed_all": {"n": 3, "bias": 0.5, "rmse": 1.0}}, "obs_name": "Arecibo AROP4"},
+            {"station_id": "181p1", "station_name": "Rincon", "html": "wind_plot_181p1.html", "png": None,
+             "stats": {}, "obs_name": ""},
+        ]
+        index = render_index(self.dir, pages)
+        self.assertIn("5.3<small>m/s</small>", index)
+        self.assertIn("from 61° ENE", index)
+        self.assertIn("No data in latest run", index)
+        self.assertNotIn("__", index)
+
+        web = self.dir / "www"
+        copied = publish(self.dir, web, ["wind_plot_249p1.html", "missing.png"])
+        self.assertEqual(copied, ["wind_plot_249p1.html", "latest.json", "status.json"])
+        self.assertEqual((web / "wind_plot_249p1.html").read_text(), "page")
+        self.assertEqual(sorted(p.name for p in web.iterdir()), sorted(copied))
 
 
 class ValidationWindTests(unittest.TestCase):

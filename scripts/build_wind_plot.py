@@ -8,6 +8,12 @@ CARICOOS weather station (see validation_wind.py), and writes for each station:
 - ``wind_plot_<station>.png``: a static figure for reports, when matplotlib is
   installed (``pip install -r requirements-plot.txt``).
 
+It also writes an ``index.html`` landing page linking every station. With
+``--web-dir`` (or the ``WINDPROXY_WEB_DIR`` environment variable) the pages,
+figures, and data products are then copied into that directory, such as a folder
+served by NGINX; each file is replaced atomically so readers never see a
+half-written page.
+
 The HTML needs only the standard library. Station data is fetched over the
 network; pass ``--no-validation`` to plot the buoy estimates alone.
 """
@@ -19,7 +25,10 @@ import csv
 import html
 import json
 import math
+import os
+import shutil
 import sys
+import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -34,8 +43,13 @@ from validation_wind import (
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE = Path(__file__).resolve().parent / "wind_plot_template.html"
+INDEX_TEMPLATE = Path(__file__).resolve().parent / "wind_index_template.html"
 DEFAULT_DIR = PROJECT_DIR / "data" / "operational"
 STATION_NAMES = {"249p1": "Arecibo", "181p1": "Rincon"}
+# Data products published next to the pages, when they exist.
+PUBLISHED_DATA = ("latest.json", "status.json", "wind_estimates.csv", "wind_estimates_since_2026.csv")
+COMPASS_POINTS = ("N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+                  "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW")
 
 
 def number(value: str | None) -> float | None:
@@ -137,6 +151,7 @@ def render(
     obs: Observations | None = None,
     matched: list[dict[str, Any]] | None = None,
     stats: dict[str, Any] | None = None,
+    png_name: str | None = None,
 ) -> str:
     payload = {
         "buoy": rows,
@@ -160,6 +175,7 @@ def render(
         .replace("__STATION_NAME__", html.escape(station_name))
         .replace("__STATION_ID__", html.escape(station_id))
         .replace("__NOTICES__", notices)
+        .replace("__PNG_LINK__", f'<a href="{html.escape(png_name)}">PNG figure</a>' if png_name else "")
         .replace("__SOURCE__", html.escape(source))
         .replace("__GEN__", generated)
         .replace("__DATA__", data)
@@ -297,6 +313,85 @@ def render_png(
     plt.close(fig)
 
 
+def atomic_write_text(path: Path, text: str) -> None:
+    with tempfile.NamedTemporaryFile("w", dir=path.parent, encoding="utf-8", delete=False, suffix=".tmp") as stream:
+        stream.write(text)
+    os.chmod(stream.name, 0o644)
+    os.replace(stream.name, path)
+
+
+def render_index(output_dir: Path, pages: list[dict[str, Any]]) -> str:
+    """Landing page with each buoy's latest estimate and links to its charts."""
+    def load(name: str) -> dict[str, Any]:
+        path = output_dir / name
+        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
+    latest, status = load("latest.json").get("stations", {}), load("status.json")
+    cards = []
+    for page in pages:
+        sid, name = page["station_id"], page["station_name"]
+        now = latest.get(sid) or {}
+        error = status.get("stations", {}).get(sid, {}).get("error")
+        if error:
+            pill = '<span class="pill down">No data in latest run</span>'
+        elif now.get("is_stale"):
+            pill = '<span class="pill stale">Stale</span>'
+        elif now:
+            pill = '<span class="pill ok">Current</span>'
+        else:
+            pill = '<span class="pill stale">No estimate yet</span>'
+        if now.get("estimated_u10_m_s") is not None:
+            direction = now.get("estimated_wind_direction_deg_from")
+            reading = f'<div class="big mono">{now["estimated_u10_m_s"]:.1f}<small>m/s</small></div>'
+            if direction is not None:
+                reading += (f'<div class="meta mono">from {direction:.0f}° '
+                            f'{COMPASS_POINTS[round(direction / 22.5) % 16]} · '
+                            f'direction confidence {html.escape(str(now.get("direction_confidence") or "n/a"))}</div>')
+            reading += (f'<div class="meta mono">{html.escape(str(now.get("time_utc", "")))} · '
+                        f'QC {html.escape(str(now.get("qc_status", "")))}</div>')
+        else:
+            reading = '<div class="big mono">—</div>'
+        notice = ('<div class="notice">CDIP could not serve this buoy in the latest run; it may be offline '
+                  'or under maintenance. Station observations are still charted.</div>') if error else ""
+        speed = (page.get("stats") or {}).get("speed_all")
+        valid = (f'<div class="meta">Against {html.escape(page["obs_name"])}: bias {speed["bias"]:+.2f} m/s, '
+                 f'RMSE {speed["rmse"]:.2f} m/s, N={speed["n"]}</div>') if speed else ""
+        image = (f'<a href="{html.escape(page["png"])}"><img src="{html.escape(page["png"])}" '
+                 f'alt="{html.escape(name)} wind chart" loading="lazy"></a>') if page.get("png") else ""
+        png_link = f'<a href="{html.escape(page["png"])}">PNG figure</a>' if page.get("png") else ""
+        cards.append(
+            f'    <article class="card">\n'
+            f'      <div><h2>{html.escape(name)}</h2><div class="id mono">CDIP {html.escape(sid)}</div></div>\n'
+            f'      {pill}\n      {reading}\n      {notice}{valid}\n      {image}\n'
+            f'      <div class="links"><a href="{html.escape(page["html"])}">Interactive chart</a>{png_link}</div>\n'
+            f'    </article>'
+        )
+    generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    return (
+        INDEX_TEMPLATE.read_text(encoding="utf-8")
+        .replace("__CARDS__", "\n".join(cards))
+        .replace("__GEN__", generated)
+        .replace("__RUN__", html.escape(str(status.get("run_at_utc", "unknown"))))
+    )
+
+
+def publish(output_dir: Path, web_dir: Path, names: list[str]) -> list[str]:
+    """Copy pages, figures, and data products into a web root, atomically."""
+    web_dir.mkdir(parents=True, exist_ok=True)
+    copied = []
+    for name in [*names, *PUBLISHED_DATA]:
+        source = output_dir / name
+        if not source.exists():
+            continue
+        with tempfile.NamedTemporaryFile(dir=web_dir, delete=False, suffix=".tmp") as stream:
+            temporary = Path(stream.name)
+        shutil.copyfile(source, temporary)
+        os.chmod(temporary, 0o644)
+        os.replace(temporary, web_dir / name)
+        copied.append(name)
+    return copied
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
@@ -316,6 +411,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--no-validation", action="store_true", help="Skip fetching station observations.")
     parser.add_argument("--no-png", action="store_true", help="Write the HTML page only.")
+    parser.add_argument(
+        "--web-dir",
+        type=Path,
+        default=Path(os.environ["WINDPROXY_WEB_DIR"]) if os.environ.get("WINDPROXY_WEB_DIR") else None,
+        help="Also copy pages, figures, and data here, e.g. an NGINX root. Default: $WINDPROXY_WEB_DIR.",
+    )
     return parser.parse_args()
 
 
@@ -341,6 +442,7 @@ def main() -> int:
             png_ok = False
 
     failures = 0
+    pages: list[dict[str, Any]] = []
     for station_id in args.station_ids or list(VALIDATION_STATIONS):
         rows, station_name = load_rows(args.input, station_id, args.days or None)
         obs = None
@@ -355,16 +457,33 @@ def main() -> int:
         matched, stats = validate(rows, obs)
         notices = station_notices(args.status, station_id, obs)
         html_path = output_dir / f"wind_plot_{station_id}.html"
-        html_path.write_text(render(rows, station_id, station_name, source, notices, obs, matched, stats), encoding="utf-8")
-        written = [html_path.name]
+        png_path = output_dir / f"wind_plot_{station_id}.png"
+        written = []
         if png_ok:
-            png_path = output_dir / f"wind_plot_{station_id}.png"
-            render_png(png_path, rows, station_id, station_name, obs, matched, stats)
+            # Render to a temporary name so a failed figure never replaces a good one.
+            temporary = png_path.with_suffix(".tmp.png")
+            render_png(temporary, rows, station_id, station_name, obs, matched, stats)
+            os.chmod(temporary, 0o644)
+            os.replace(temporary, png_path)
             written.append(png_path.name)
+        page = render(rows, station_id, station_name, source, notices, obs, matched, stats,
+                      png_name=png_path.name if png_ok else None)
+        atomic_write_text(html_path, page)
+        written.insert(0, html_path.name)
+        pages.append({"station_id": station_id, "station_name": station_name, "html": html_path.name,
+                      "png": png_path.name if png_ok else None, "stats": stats,
+                      "obs_name": obs.name if obs else ""})
         obs_note = "no station" if obs is None else (f"station error: {obs.error}" if obs.error else f"{len(obs.times)} station readings")
         speed = stats.get("speed_all")
         stat_note = f", speed bias {speed['bias']:+.2f} m/s RMSE {speed['rmse']:.2f}" if speed else ""
         print(f"{station_name}: {len(rows)} buoy records, {obs_note}{stat_note} -> {', '.join(written)} in {output_dir}")
+
+    if pages:
+        atomic_write_text(output_dir / "index.html", render_index(output_dir, pages))
+        if args.web_dir:
+            names = ["index.html"] + [p["html"] for p in pages] + [p["png"] for p in pages if p["png"]]
+            copied = publish(output_dir, args.web_dir, names)
+            print(f"Published {len(copied)} files to {args.web_dir}")
     return 1 if failures else 0
 
 

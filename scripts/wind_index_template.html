@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="refresh" content="600">
+<title>WindProxy Puerto Rico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f5f8fa; --panel:#ffffff; --ink:#0f1a22; --ink-2:#4a5a66; --muted:#6f7f8b; --line:#dbe3e9;
+  --s1:#2a78d6; --good:#1a7f37; --q:#9a6700; --bad:#c62828; --warn-bg:#fff4e0; --warn-ink:#7a4a00;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme:dark;
+    --bg:#0e151b; --panel:#151f27; --ink:#eef3f6; --ink-2:#a8b7c2; --muted:#8595a1; --line:#26343e;
+    --s1:#3987e5; --good:#4cc26a; --q:#e0b04a; --bad:#ef6b6b; --warn-bg:#2e2410; --warn-ink:#f2c46b;
+  }
+}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.5}
+.wrap{max-width:960px;margin:0 auto;padding:32px 16px 48px;display:flex;flex-direction:column;gap:20px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:28px;font-weight:600;margin:0;letter-spacing:-.01em}
+.sub{color:var(--ink-2);margin:4px 0 0;max-width:70ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.card h2{font-size:18px;margin:0;font-weight:600}
+.card .id{font-size:12px;color:var(--muted)}
+.big{font-size:30px;font-weight:500}
+.big small{font-size:14px;color:var(--ink-2);font-weight:400;margin-left:4px}
+.meta{font-size:13px;color:var(--ink-2)}
+.pill{display:inline-flex;align-items:center;font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid currentColor;width:max-content}
+.pill.ok{color:var(--good)} .pill.stale{color:var(--q)} .pill.down{color:var(--bad)}
+.notice{background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:8px 12px;font-size:13px}
+.links{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:auto;padding-top:4px}
+a{color:var(--s1);text-underline-offset:3px}
+a:focus-visible{outline:2px solid var(--s1);outline-offset:2px;border-radius:3px}
+.card img{width:100%;height:auto;border-radius:6px;border:1px solid var(--line);background:#fff}
+footer{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">WindProxy · CDIP wave buoys · CARICOOS stations</div>
+    <h1>WindProxy Puerto Rico</h1>
+    <p class="sub">Wind speed and direction estimated from the wave spectra of the Arecibo and Rincón buoys, validated against nearby weather stations. Updated every polling run; this page reloads every 10 minutes.</p>
+  </header>
+  <div class="grid">
+__CARDS__
+  </div>
+  <footer>
+    <span>Page built __GEN__. Last polling run <span class="mono">__RUN__</span>.</span>
+    <span>Data: <a href="wind_estimates.csv">wind_estimates.csv</a> · <a href="wind_estimates_since_2026.csv">wind_estimates_since_2026.csv</a> · <a href="latest.json">latest.json</a> · <a href="status.json">status.json</a></span>
+    <span>Method: Mudd et al. (2024), Voermans et al. (2020). Wave data: CDIP, Scripps Institution of Oceanography. Station data: CARICOOS.</span>
+  </footer>
+</div>
+</body>
+</html>

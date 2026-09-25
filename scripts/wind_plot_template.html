@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>__STATION_NAME__ Buoy Winds</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -24,7 +29,7 @@
   --s1:#3987e5; --s2:#d95926; --ref:#6b7b87; --warn-bg:#2e2410; --warn-ink:#f2c46b; --warn-dot:#c98500;
   --good:#4cc26a; --q:#e0b04a; --bad:#ef6b6b;
 }
-body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.5}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.5}
 .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 48px;display:flex;flex-direction:column;gap:20px}
 .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
 header{display:flex;flex-direction:column;gap:4px}
@@ -69,11 +74,15 @@ table.rows{border-collapse:collapse;font-size:13px;width:100%}
 .rows th{position:sticky;top:0;background:var(--panel);color:var(--muted);font-weight:500;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
 .rows td.num{text-align:right}
 footer{font-size:12px;color:var(--muted)}
+.nav{display:flex;gap:16px;font-size:13px;margin-bottom:6px}
+a{color:var(--s1);text-underline-offset:3px}
 @media (max-width:520px){h1{font-size:23px}.readout .v{font-size:17px}}
 </style>
-
+</head>
+<body>
 <div class="wrap">
   <header>
+    <nav class="nav"><a href="index.html">← All stations</a>__PNG_LINK__</nav>
     <div class="eyebrow">WindProxy · CDIP __STATION_ID__ · __STATION_NAME__, Puerto Rico</div>
     <h1>__STATION_NAME__ Buoy Winds</h1>
     <p class="sub">Neutral 10&nbsp;m wind estimated from the buoy's wave spectrum, checked against the <span id="obs-name"></span> weather station<span id="span"></span>. Times are UTC.</p>
@@ -283,3 +292,5 @@ document.getElementById("tb").innerHTML = rows.slice().reverse().map(r =>
 draw();
 let rt; addEventListener("resize", ()=>{ clearTimeout(rt); rt=setTimeout(draw,120); });
 </script>
+</body>
+</html>
