@@ -155,6 +155,24 @@ feed had published with a zero wave height or a bad quality flag, and rejected
 one that CDIP has since flagged. A short gap between the end of the archive and
 the start of the real-time window leaves the occasional row unreprocessed.
 
+## Plotting the estimates
+
+`scripts/build_wind_plot.py` turns the operational CSV into a single
+self-contained HTML page with wind speed, wind direction, and significant wave
+height against time. It uses only the standard library and needs no network, so
+open the result directly in a browser:
+
+```sh
+.venv/bin/python scripts/build_wind_plot.py
+```
+
+This writes `data/operational/wind_plot_249p1.html` covering the last seven
+days of Arecibo records. Pass `--station-id 181p1` for Rincon, `--days 0` to plot
+everything, or `--input data/operational/wind_estimates_since_2026.csv` for the
+2026-onward record. Hollow markers are `questionable` records, rejected records
+leave gaps, and the page notes any other station whose latest polling run
+failed.
+
 ## License and citation
 
 Released under the MIT License; see `LICENSE`. The estimator implements
