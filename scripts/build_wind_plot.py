@@ -306,10 +306,11 @@ def render_png(
     # Categorical slots 3 and 4 after buoy (1) and station (2); 2 km is also dashed.
     model_style = {"wrf1km": ("#1baf7a", "-", "s"), "wrf2km": ("#eda100", "--", "^")}
     fig = plt.figure(figsize=(14, 12), dpi=130, facecolor="white")
-    layout = fig.add_gridspec(4, 2, width_ratios=[2.6, 1], height_ratios=[1, 1, 1, 1.05], hspace=0.38, wspace=0.18)
+    layout = fig.add_gridspec(4, 2, width_ratios=[2.6, 1], height_ratios=[1, 1.15, 0.9, 1.05], hspace=0.38, wspace=0.18)
     ax_u, ax_d, ax_h = (fig.add_subplot(layout[i, 0]) for i in range(3))
-    ax_sc = fig.add_subplot(layout[0:2, 1])
-    ax_leg = fig.add_subplot(layout[2, 1])
+    # Legend on top, the speed-vs-station scatter beneath it.
+    ax_leg = fig.add_subplot(layout[0, 1])
+    ax_sc = fig.add_subplot(layout[1:3, 1])
     ax_tx = fig.add_subplot(layout[3, :])
     for ax in (ax_u, ax_d, ax_h, ax_sc):
         ax.grid(color=grid, linewidth=0.8)
@@ -342,7 +343,6 @@ def render_png(
     label = obs.name if obs else "Station"
     if obs is not None and not obs.error:
         ax_u.plot(*gapped(list(zip(obs.times, obs.speed_m_s))), color=station, linewidth=1.1, label=f"{label} observed")
-        ax_d.scatter(obs.times, [d if d is not None else float("nan") for d in obs.direction_deg], s=4, color=station, alpha=0.7, linewidths=0)
     for key, pair in models.items():
         at_buoy = pair.get("buoy")
         if at_buoy is None:
@@ -351,23 +351,49 @@ def render_png(
         speeds = [math.hypot(u, v) for u, v in zip(at_buoy.u, at_buoy.v)]
         dirs = [(270.0 - math.degrees(math.atan2(v, u))) % 360.0 for u, v in zip(at_buoy.u, at_buoy.v)]
         ax_u.plot(*gapped(list(zip(at_buoy.times, speeds))), color=color, linestyle=dash, linewidth=1.5, label=f"{MODELS[key].label} at buoy")
-        ax_d.scatter(at_buoy.times, dirs, s=9, marker=model_style.get(key, ("", "", "D"))[2], color=color, linewidths=0, zorder=2)
     published = [(t, r["u"] if r["qc"] != "rejected" else None) for t, r in zip(times, rows)]
     ax_u.plot(*gapped(published), color=buoy, linewidth=1.8, label="Buoy U10 estimate")
-    for ax, key in ((ax_u, "u"), (ax_d, "d")):
-        good, quest = series(key)
-        if good:
-            ax.scatter(*zip(*good), s=16, color=buoy, edgecolors="white", linewidths=0.5, zorder=3, label="QC good" if ax is ax_u else None)
-        if quest:
-            ax.scatter(*zip(*quest), s=16, facecolors="white", edgecolors=buoy, linewidths=1.1, zorder=3, label="QC questionable" if ax is ax_u else None)
+    good, quest = series("u")
+    if good:
+        ax_u.scatter(*zip(*good), s=16, color=buoy, edgecolors="white", linewidths=0.5, zorder=3, label="QC good")
+    if quest:
+        ax_u.scatter(*zip(*quest), s=16, facecolors="white", edgecolors=buoy, linewidths=1.1, zorder=3, label="QC questionable")
+
+    # Direction as a quiver: one lane per source, arrows toward where the wind
+    # blows with north up, vector-averaged into time bins. Arrows share one
+    # length so calm-wind directions stay readable; speed has its own panel.
+    span_all = times + (list(obs.times) if obs and not obs.error else [])
+    span_hours = (max(span_all) - min(span_all)).total_seconds() / 3600 if span_all else 24
+    bin_hours = next((h for h in (1, 2, 3, 6, 12) if span_hours / h <= 70), 24)
+    lanes = [("Buoy", buoy, [(t, r["u"], r["d"], r["qc"] == "good") for t, r in zip(times, rows) if r["qc"] != "rejected"])]
+    if obs is not None and not obs.error:
+        lanes.append(("Station", station, list(zip(obs.times, obs.speed_m_s, obs.direction_deg, [True] * len(obs.times)))))
+    for key, pair in models.items():
+        if pair.get("buoy"):
+            m = pair["buoy"]
+            lanes.append((MODELS[key].label, model_style.get(key, ("#4a3aa7",))[0],
+                          [(t, math.hypot(u, v), (270.0 - math.degrees(math.atan2(v, u))) % 360.0, True) for t, u, v in zip(m.times, m.u, m.v)]))
+    binned = [bin_vectors(samples, timedelta(hours=bin_hours)) for _, _, samples in lanes]
+    for k, ((name, color, _), bins) in enumerate(zip(lanes, binned)):
+        y = len(lanes) - 1 - k
+        ax_d.axhline(y, color=grid, linewidth=0.8, zorder=0)
+        for faded in (False, True):
+            pts = [b for b in bins if b[4] == faded]
+            if pts:
+                unit = [(b[1] / b[3], b[2] / b[3]) if b[3] > 0 else (0.0, 0.0) for b in pts]
+                ax_d.quiver([mdates.date2num(b[0]) for b in pts], [y] * len(pts), [u for u, _ in unit], [v for _, v in unit],
+                            angles="uv", scale_units="inches", scale=1 / 0.2, pivot="middle", color=color,
+                            alpha=0.4 if faded else 1.0, width=0.0024, headwidth=3.5, headlength=4, headaxislength=3.5, zorder=2)
+    ax_d.set_ylim(-0.7, len(lanes) - 0.3)
+    ax_d.set_yticks(range(len(lanes)), [name for name, _, _ in reversed(lanes)])
+    ax_d.grid(axis="y", visible=False)
+    ax_d.set_title(f"Wind direction: arrows point where the wind blows toward, north up "
+                   f"({bin_hours} h vector means; speed is in the panel above)", color=ink, fontsize=8.5, loc="left")
     ax_u.axhline(7, color=ref, linestyle="--", linewidth=1, label="7 m/s direction threshold")
     ax_h.plot(*gapped([(t, r["hs"]) for t, r in zip(times, rows)]), color=buoy, linewidth=1.8)
 
     ax_u.set_ylabel("Wind speed (m/s)", color=ink, fontsize=9)
     ax_u.set_ylim(bottom=0)
-    ax_d.set_ylabel("Wind from (° true)", color=ink, fontsize=9)
-    ax_d.set_ylim(0, 360)
-    ax_d.set_yticks([0, 90, 180, 270, 360], ["N 0", "E 90", "S 180", "W 270", "N 360"])
     ax_h.set_ylabel("Hs (m)", color=ink, fontsize=9)
     ax_h.set_ylim(bottom=0)
     span = [t for t in times] + (list(obs.times) if obs and not obs.error else [])
@@ -446,8 +472,34 @@ def render_png(
     last = times[-1] if times else (obs.times[-1] if obs and obs.times else None)
     window = f"{first:%Y-%m-%d %H:%M} to {last:%Y-%m-%d %H:%M} UTC" if first and last else ""
     fig.suptitle(f"{station_name} buoy winds  ·  CDIP {station_id}  ·  {window}", x=0.06, ha="left", fontsize=12, color=ink, fontweight="bold")
+    fig.subplots_adjust(top=0.94)
     fig.savefig(path, bbox_inches="tight", facecolor="white")
     plt.close(fig)
+
+
+def bin_vectors(samples: list[tuple[datetime, float | None, float | None, bool]], width: timedelta):
+    """Vector-average (time, speed, direction-from, good) samples into bins.
+
+    Returns (bin centre, east, north, speed, all_questionable) per bin, where
+    east and north are the components of the direction the wind blows toward.
+    """
+    bins: dict[int, list[float]] = {}
+    step = width.total_seconds()
+    for when, speed, direction, good in samples:
+        if speed is None or direction is None:
+            continue
+        k = int(when.timestamp() // step)
+        a = math.radians(direction)
+        b = bins.setdefault(k, [0.0, 0.0, 0, False])
+        b[0] += -speed * math.sin(a)
+        b[1] += -speed * math.cos(a)
+        b[2] += 1
+        b[3] = b[3] or good
+    out = []
+    for k, (east, north, n, any_good) in sorted(bins.items()):
+        e, nn = east / n, north / n
+        out.append((datetime.fromtimestamp((k + 0.5) * step, tz=timezone.utc), e, nn, math.hypot(e, nn), not any_good))
+    return out
 
 
 def atomic_write_text(path: Path, text: str) -> None:

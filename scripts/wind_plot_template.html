@@ -116,8 +116,8 @@ __NOTICES__
     <div class="panel">
       <h2>Wind speed vs station</h2>
       <p class="hint">m/s. Points on the diagonal agree exactly with the station.</p>
+      <div class="legend" id="sc-legend" style="margin:0 0 8px"></div>
       <svg id="c-sc" role="img" aria-label="Scatter of buoy estimate and model wind speed against station observed wind speed"></svg>
-      <div class="legend" id="sc-legend" style="margin:6px 0 4px"></div>
     </div>
   </section>
 
@@ -132,7 +132,7 @@ __NOTICES__
 
   <div class="charts">
     <section class="panel"><h2>Wind speed</h2><p class="hint">m/s. Models are sampled at the buoy. Rejected buoy records leave a gap.</p><svg id="c-u" role="img" aria-label="Wind speed over time"></svg></section>
-    <section class="panel"><h2>Wind direction</h2><p class="hint">Degrees true the wind blows from.</p><svg id="c-d" role="img" aria-label="Wind direction over time"></svg></section>
+    <section class="panel"><h2>Wind direction</h2><p class="hint">Arrows point where the wind blows toward, with north up. Each is the vector average over <span id="q-bin">one hour</span>. All arrows share one length so light-wind directions stay readable; speed is in the chart above. Faded buoy arrows are QC questionable.</p><svg id="c-d" role="img" aria-label="Wind direction and speed over time as arrows, one lane per source"></svg></section>
     <section class="panel"><h2>Significant wave height</h2><p class="hint">Hs from the buoy, metres, all records.</p><svg id="c-hs" role="img" aria-label="Significant wave height over time"></svg></section>
   </div>
 
@@ -202,7 +202,6 @@ const hmax = Math.max(0.4, Math.ceil((Math.max(0, ...rows.map(r=>r.hs||0))+0.1)*
 function range(a,b,s){const o=[];for(let v=a;v<=b+1e-9;v+=s)o.push(+v.toFixed(6));return o;}
 const CHARTS = [
   {id:"c-u", key:"u", min:0, max:umax, ticks:range(0,umax,umax>12?4:2), fmt:v=>v, line:true, dots:true, ref:7, obs:"line", models:"line"},
-  {id:"c-d", key:"d", min:0, max:360, ticks:[0,90,180,270,360], fmt:v=>["N","E","S","W","N"][v/90]+" "+v+"°", line:false, dots:true, obs:"dots", models:"dots"},
   {id:"c-hs", key:"hs", min:0, max:hmax, ticks:range(0,hmax+1e-9,hmax>1?0.5:0.2), fmt:v=>+v.toFixed(1), line:true, dots:false},
 ];
 const M = {l:58, r:14, t:10, b:26};
@@ -242,13 +241,8 @@ function draw(){
     const plot = el("g",{"clip-path":`url(#${c.id}-clip)`},svg);
     if(c.ref!=null) el("line",{x1:M.l,x2:W-M.r,y1:y(c.ref),y2:y(c.ref),stroke:"var(--ref)","stroke-width":1.5,"stroke-dasharray":"5 4"},plot);
     if(c.obs==="line") el("path",{d:pathOf(obs,"u",x,y,3600e3),fill:"none",stroke:"var(--s2)","stroke-width":1.5,"stroke-linejoin":"round",opacity:.9},plot);
-    if(c.obs==="dots") for(const o of obs) if(o.d!=null) el("circle",{cx:x(o.ms),cy:y(o.d),r:2,fill:"var(--s2)",opacity:.7},plot);
     for(const m of MODELS){
       if(c.models==="line") el("path",{d:pathOf(m.pts,"u",x,y,2*3600e3),fill:"none",stroke:m.color,"stroke-width":1.8,"stroke-dasharray":m.dash,"stroke-linejoin":"round"},plot);
-      if(c.models==="dots") for(const p of m.pts) if(p.d!=null){
-        if(m.k) el("rect",{x:x(p.ms)-2.5,y:y(p.d)-2.5,width:5,height:5,fill:m.color,opacity:.85},plot);
-        else el("path",{d:`M${x(p.ms)},${y(p.d)-3.2}L${x(p.ms)+3},${y(p.d)+2.2}L${x(p.ms)-3},${y(p.d)+2.2}Z`,fill:m.color,opacity:.85},plot);
-      }
     }
     if(c.line) el("path",{d:pathOf(rows,c.key,x,y,3600e3),fill:"none",stroke:"var(--s1)","stroke-width":2,"stroke-linejoin":"round","stroke-linecap":"round"},plot);
     if(c.dots){
@@ -266,8 +260,80 @@ function draw(){
     hit.addEventListener("pointerleave", ()=>focus(null));
     state.push({x,cross});
   }
+  drawQuiver();
   drawScatter();
   focus(null);
+}
+
+// Vector-average (speed, direction-from) samples into time bins; returns [{ms, u, v, s, n, good}]
+// with u, v the east and north components of the direction the wind blows toward.
+function binVectors(list, binMs, isGood){
+  const bins = new Map();
+  for(const r of list){
+    if(r.u==null || r.d==null || r.qc==="rejected") continue;
+    const k = Math.floor(r.ms/binMs);
+    const a = r.d*Math.PI/180, b = bins.get(k) || {u:0, v:0, n:0, good:false};
+    b.u += -r.u*Math.sin(a); b.v += -r.u*Math.cos(a); b.n++; b.good = b.good || (isGood ? isGood(r) : true);
+    bins.set(k, b);
+  }
+  return [...bins].map(([k,b]) => ({ms:(k+0.5)*binMs, u:b.u/b.n, v:b.v/b.n, s:Math.hypot(b.u/b.n, b.v/b.n), good:b.good}));
+}
+
+function drawQuiver(){
+  const svg = document.getElementById("c-d");
+  const W = Math.max(300, svg.parentElement.clientWidth - 28);
+  const lanes = [
+    {label:"Buoy", color:"var(--s1)", pts: rows, good: r => r.qc==="good"},
+    {label:"Station", color:"var(--s2)", pts: obs},
+    ...MODELS.map(m => ({label: m.label.replace(" km","km"), color: m.color, pts: m.pts})),
+  ];
+  const laneH = W < 520 ? 44 : 54, top = 24;
+  const H = top + lanes.length*laneH + 26;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.innerHTML = "";
+  const x = ms => M.l + (ms-t0)/(t1-t0)*(W-M.l-M.r);
+  // Bin width: the finest of 1, 2, 3, 6, 12 h that keeps arrows about 14 px apart.
+  const want = (t1-t0) / ((W-M.l-M.r)/14);
+  const binH = [1,2,3,6,12,24].find(h => h*3600e3 >= want) || 24;
+  document.getElementById("q-bin").textContent = binH===1 ? "one hour" : binH + " hours";
+  const binned = lanes.map(l => binVectors(l.pts, binH*3600e3, l.good));
+  // One arrow length for all: as long as the lane and the bin spacing allow.
+  const spacing = (binH*3600e3)/(t1-t0)*(W-M.l-M.r);
+  const len = Math.max(9, Math.min(laneH*0.75, spacing*0.9, 26));
+  const days = (t1-t0)/86400e3, step = (days>10?48:days>4?24:12)*3600e3;
+  for(let ms=Math.ceil(t0/step)*step; ms<=t1; ms+=step){
+    el("line",{x1:x(ms),x2:x(ms),y1:top,y2:H-26,stroke:"var(--grid)","stroke-width":1},svg);
+    const d=new Date(ms);
+    el("text",{x:x(ms),y:H-8,"text-anchor":"middle"},svg).textContent = d.getUTCHours()===0 ? d.toISOString().slice(5,10) : "12:00";
+  }
+  el("text",{x:M.l,y:14},svg).textContent = "N ↑";
+  const clip = el("clipPath",{id:"c-d-clip"},svg); el("rect",{x:M.l-10,y:0,width:W-M.l-M.r+20,height:H},clip);
+  const plot = el("g",{"clip-path":"url(#c-d-clip)"},svg);
+  lanes.forEach((lane, k) => {
+    const y0 = top + (k+0.5)*laneH;
+    el("line",{x1:M.l,x2:W-M.r,y1:y0,y2:y0,stroke:"var(--grid)","stroke-width":1},svg);
+    el("text",{x:M.l-8,y:y0+4,"text-anchor":"end"},svg).textContent = lane.label;
+    for(const b of binned[k]){
+      if(b.ms < t0 || b.ms > t1) continue;
+      if(b.s <= 0) continue;
+      const cx = x(b.ms), dx = b.u/b.s*len/2, dy = -b.v/b.s*len/2;
+      arrow(plot, cx-dx, y0-dy, cx+dx, y0+dy, lane.color, b.good ? 1 : 0.45);
+    }
+  });
+  const cross = el("line",{y1:top,y2:H-26,stroke:"var(--ink-2)","stroke-width":1,opacity:0},svg);
+  const hit = el("rect",{x:M.l,y:0,width:W-M.l-M.r,height:H,fill:"transparent"},svg);
+  const pick = ev => { const p = svg.getBoundingClientRect(); focus(t0 + ((ev.clientX-p.left)*W/p.width-M.l)/(W-M.l-M.r)*(t1-t0)); };
+  hit.addEventListener("pointermove", pick);
+  hit.addEventListener("pointerdown", pick);
+  hit.addEventListener("pointerleave", ()=>focus(null));
+  state.push({x,cross});
+}
+
+function arrow(parent, xa, ya, xb, yb, color, opacity){
+  const len = Math.hypot(xb-xa, yb-ya);
+  if(len < 1.5){ el("circle",{cx:(xa+xb)/2,cy:(ya+yb)/2,r:1.5,fill:color,opacity},parent); return; }
+  const ux = (xb-xa)/len, uy = (yb-ya)/len, h = Math.min(5, len*0.45);
+  el("path",{d:`M${xa.toFixed(1)},${ya.toFixed(1)}L${xb.toFixed(1)},${yb.toFixed(1)}`,stroke:color,"stroke-width":1.6,"stroke-linecap":"round",fill:"none",opacity},parent);
+  el("path",{d:`M${xb.toFixed(1)},${yb.toFixed(1)}L${(xb-ux*h-uy*h*0.55).toFixed(1)},${(yb-uy*h+ux*h*0.55).toFixed(1)}L${(xb-ux*h+uy*h*0.55).toFixed(1)},${(yb-uy*h-ux*h*0.55).toFixed(1)}Z`,fill:color,opacity},parent);
 }
 
 function drawScatter(){
