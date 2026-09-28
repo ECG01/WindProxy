@@ -44,6 +44,10 @@ VALIDATION_STATIONS: dict[str, dict[str, Any]] = {
         "direction_qc": "wind_direction_qc",
         "has_station_dim": True,
         "height": "anemometer 12 m above site elevation",
+        "latitude": 18.48053,
+        "longitude": -66.70236,
+        "buoy_latitude": 18.49085,
+        "buoy_longitude": -66.700516,
     },
     "181p1": {
         "station_id": "E9889_TPR",
@@ -55,6 +59,10 @@ VALIDATION_STATIONS: dict[str, dict[str, Any]] = {
         "direction_qc": None,
         "has_station_dim": False,
         "height": "Davis anemometer, height above ground not documented",
+        "latitude": 18.3470,
+        "longitude": -67.2613,
+        "buoy_latitude": 18.3765,
+        "buoy_longitude": -67.2799,
     },
 }
 
@@ -108,7 +116,7 @@ def parse_ascii(text: str) -> dict[str, list[float]]:
         name = lines[0].split("[", 1)[0].split(".")[-1].strip()
         values: list[float] = []
         for line in lines[1:]:
-            line = re.sub(r"^\s*\[\d+\],\s*", "", line)
+            line = re.sub(r"^\s*(?:\[\d+\])+,\s*", "", line)
             for item in line.split(","):
                 item = item.strip()
                 if not item:

@@ -8,6 +8,10 @@ CARICOOS weather station (see validation_wind.py), and writes for each station:
 - ``wind_plot_<station>.png``: a static figure for reports, when matplotlib is
   installed (``pip install -r requirements-plot.txt``).
 
+The CARICOOS WRF 1 km and 2 km forecasts are sampled at each buoy and station
+(see model_wind.py) and scored alongside the buoy estimate. Fetched model hours
+are cached in ``<output>/model/``; ``--no-model`` skips them.
+
 It also writes an ``index.html`` landing page linking every station. With
 ``--web-dir`` (or the ``WINDPROXY_WEB_DIR`` environment variable) the pages,
 figures, and data products are then copied into that directory, such as a folder
@@ -33,6 +37,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from model_wind import MODELS, ModelSeries, load_series
+from model_wind import update as update_model
 from validation_wind import (
     VALIDATION_STATIONS,
     Observations,
@@ -100,25 +106,106 @@ def plot_window(rows: list[dict[str, Any]], days: float | None) -> tuple[datetim
     return now - timedelta(days=days or 7.0), now
 
 
-def validate(rows: list[dict[str, Any]], obs: Observations | None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Station values matched to each buoy row, and summary statistics."""
-    if obs is None or obs.error:
-        return [{} for _ in rows], {}
-    matched = match_to_buoy([parse_utc(r["t"]) for r in rows], obs)
-    out = [
-        {"u": None if u is None else round(u, 3), "d": None if d is None else round(d, 1)}
-        for u, d in matched
-    ]
+def validate(
+    rows: list[dict[str, Any]],
+    obs: Observations | None,
+    models: dict[str, dict[str, ModelSeries | None]] | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Station and model values matched to each buoy row, and skill scores.
+
+    Buoy rows cover a 30 minute sample from their timestamp, so the station is
+    averaged over that window and the models are interpolated to its middle.
+    Models are also scored against the station on their own hourly timeline,
+    averaging the station over the surrounding hour, so a buoy that is offline
+    does not stop the model validation.
+    """
+    models = models or {}
+    times = [parse_utc(r["t"]) for r in rows]
+    have_obs = obs is not None and not obs.error
+    station = match_to_buoy(times, obs) if have_obs else [(None, None)] * len(rows)
+    out = []
+    for when, (su, sd) in zip(times, station):
+        entry: dict[str, Any] = {"u": None if su is None else round(su, 3), "d": None if sd is None else round(sd, 1)}
+        for key, series in models.items():
+            value = series["buoy"].at(when + timedelta(minutes=15)) if series.get("buoy") else None
+            entry[key] = None if value is None else {"u": round(value[0], 3), "d": round(value[1], 1)}
+        out.append(entry)
+
     published = [(r, m) for r, m in zip(rows, out) if r["qc"] != "rejected"]
-    speed_all = [(r["u"], m["u"]) for r, m in published if r["u"] is not None and m["u"] is not None]
-    speed_good = [(r["u"], m["u"]) for r, m in published if r["qc"] == "good" and r["u"] is not None and m["u"] is not None]
-    direction_all = [(r["d"], m["d"]) for r, m in published if r["d"] is not None and m["d"] is not None]
+
+    def pairs(field: str, reference, candidates, good_only: bool = False):
+        return [
+            (r[field], ref)
+            for r, m in candidates
+            if (not good_only or r["qc"] == "good")
+            and r[field] is not None
+            and (ref := reference(m)) is not None
+        ]
+
+    speed_all = pairs("u", lambda m: m["u"], published)
+    speed_good = pairs("u", lambda m: m["u"], published, good_only=True)
+    direction_all = pairs("d", lambda m: m["d"], published)
+    table = [
+        {"group": "Speed vs station", "label": "Buoy estimate, QC good", "series": "buoy", "unit": "m/s", "stats": comparison_stats(speed_good)},
+        {"group": "Speed vs station", "label": "Buoy estimate, all published", "series": "buoy", "unit": "m/s", "stats": comparison_stats(speed_all)},
+    ]
+    direction_rows = [
+        {"group": "Direction vs station", "label": "Buoy estimate", "series": "buoy", "unit": "°", "stats": comparison_stats(direction_all, circular=True)},
+    ]
+    against_buoy = []
+    scatter: dict[str, list[list[float]]] = {}
+
+    for key, series in models.items():
+        label = MODELS[key].label
+        at_station = series.get("station")
+        speed_pairs, direction_pairs = [], []
+        if have_obs and at_station is not None:
+            hours = at_station.times
+            averaged = match_to_buoy([h - timedelta(minutes=30) for h in hours], obs)
+            for hour, (su, sd) in zip(hours, averaged):
+                value = at_station.at(hour)
+                if value is None:
+                    continue
+                if su is not None:
+                    speed_pairs.append((value[0], su))
+                if sd is not None:
+                    direction_pairs.append((value[1], sd))
+        scatter[key] = [[round(o, 2), round(m, 2)] for m, o in speed_pairs]
+        table.append({"group": "Speed vs station", "label": label, "series": key, "unit": "m/s", "stats": comparison_stats(speed_pairs)})
+        direction_rows.append({"group": "Direction vs station", "label": label, "series": key, "unit": "°",
+                               "stats": comparison_stats(direction_pairs, circular=True)})
+        model_speed = [(m[key]["u"], r["u"]) for r, m in published if m.get(key) and r["u"] is not None]
+        model_direction = [(m[key]["d"], r["d"]) for r, m in published if m.get(key) and r["d"] is not None]
+        against_buoy.append({"group": "Speed vs buoy estimate", "label": label, "series": key, "unit": "m/s", "stats": comparison_stats(model_speed)})
+        against_buoy.append({"group": "Direction vs buoy estimate", "label": label, "series": key, "unit": "°",
+                             "stats": comparison_stats(model_direction, circular=True)})
+
+    table += direction_rows + sorted(against_buoy, key=lambda row: row["group"], reverse=True)
     stats = {
         "speed_all": comparison_stats(speed_all),
         "speed_good": comparison_stats(speed_good),
         "direction_all": comparison_stats(direction_all, circular=True),
+        "table": table,
+        "scatter": scatter,
     }
     return out, stats
+
+
+def load_models(station_id: str, start: datetime, end: datetime, cache_dir: Path,
+                fetch: bool = True) -> dict[str, dict[str, ModelSeries | None]]:
+    """Update the model cache for the window, then read each model at the buoy and station."""
+    models = {}
+    for key, source in MODELS.items():
+        if fetch:
+            try:
+                print(update_model(source, start - timedelta(hours=1), end, cache_dir))
+            except Exception as error:
+                print(f"{source.label}: update failed, using cached hours ({type(error).__name__}: {error})", file=sys.stderr)
+        buoy = load_series(source, station_id, start - timedelta(hours=1), end, cache_dir)
+        station = load_series(source, f"{station_id}:station", start - timedelta(hours=1), end, cache_dir)
+        if buoy or station:
+            models[key] = {"buoy": buoy, "station": station}
+    return models
 
 
 def station_notices(status_path: Path, station_id: str, obs: Observations | None) -> str:
@@ -152,6 +239,7 @@ def render(
     matched: list[dict[str, Any]] | None = None,
     stats: dict[str, Any] | None = None,
     png_name: str | None = None,
+    models: dict[str, dict[str, ModelSeries | None]] | None = None,
 ) -> str:
     payload = {
         "buoy": rows,
@@ -159,6 +247,20 @@ def render(
         "stats": stats or {},
         "obs": [],
         "meta": {},
+        "models": [
+            {
+                "key": key,
+                "label": MODELS[key].label,
+                "cell": series["buoy"].cell,
+                "pts": [
+                    {"t": iso(t), "u": round(math.hypot(u, v), 3),
+                     "d": round((270.0 - math.degrees(math.atan2(v, u))) % 360.0, 1)}
+                    for t, u, v in zip(series["buoy"].times, series["buoy"].u, series["buoy"].v)
+                ],
+            }
+            for key, series in (models or {}).items()
+            if series.get("buoy")
+        ],
     }
     if obs is not None:
         payload["meta"] = {"name": obs.name, "id": obs.station_id, "height": obs.height,
@@ -190,6 +292,7 @@ def render_png(
     obs: Observations | None,
     matched: list[dict[str, Any]],
     stats: dict[str, Any],
+    models: dict[str, dict[str, ModelSeries | None]] | None = None,
 ) -> None:
     import matplotlib
 
@@ -199,11 +302,15 @@ def render_png(
 
     buoy, station, ref, ink, muted, grid = "#2a78d6", "#eb6834", "#8a98a3", "#0f1a22", "#6f7f8b", "#e2e8ed"
     times = [parse_utc(r["t"]) for r in rows]
-    fig = plt.figure(figsize=(13, 9), dpi=130, facecolor="white")
-    layout = fig.add_gridspec(3, 2, width_ratios=[2.6, 1], hspace=0.35, wspace=0.18)
+    models = models or {}
+    # Categorical slots 3 and 4 after buoy (1) and station (2); 2 km is also dashed.
+    model_style = {"wrf1km": ("#1baf7a", "-", "s"), "wrf2km": ("#eda100", "--", "^")}
+    fig = plt.figure(figsize=(14, 12), dpi=130, facecolor="white")
+    layout = fig.add_gridspec(4, 2, width_ratios=[2.6, 1], height_ratios=[1, 1, 1, 1.05], hspace=0.38, wspace=0.18)
     ax_u, ax_d, ax_h = (fig.add_subplot(layout[i, 0]) for i in range(3))
     ax_sc = fig.add_subplot(layout[0:2, 1])
-    ax_tx = fig.add_subplot(layout[2, 1])
+    ax_leg = fig.add_subplot(layout[2, 1])
+    ax_tx = fig.add_subplot(layout[3, :])
     for ax in (ax_u, ax_d, ax_h, ax_sc):
         ax.grid(color=grid, linewidth=0.8)
         ax.set_axisbelow(True)
@@ -235,7 +342,16 @@ def render_png(
     label = obs.name if obs else "Station"
     if obs is not None and not obs.error:
         ax_u.plot(*gapped(list(zip(obs.times, obs.speed_m_s))), color=station, linewidth=1.1, label=f"{label} observed")
-        ax_d.scatter(obs.times, [d if d is not None else float("nan") for d in obs.direction_deg], s=4, color=station, alpha=0.7, linewidths=0, label=f"{label} observed")
+        ax_d.scatter(obs.times, [d if d is not None else float("nan") for d in obs.direction_deg], s=4, color=station, alpha=0.7, linewidths=0)
+    for key, pair in models.items():
+        at_buoy = pair.get("buoy")
+        if at_buoy is None:
+            continue
+        color, dash, _ = model_style.get(key, ("#4a3aa7", "-", "D"))
+        speeds = [math.hypot(u, v) for u, v in zip(at_buoy.u, at_buoy.v)]
+        dirs = [(270.0 - math.degrees(math.atan2(v, u))) % 360.0 for u, v in zip(at_buoy.u, at_buoy.v)]
+        ax_u.plot(*gapped(list(zip(at_buoy.times, speeds))), color=color, linestyle=dash, linewidth=1.5, label=f"{MODELS[key].label} at buoy")
+        ax_d.scatter(at_buoy.times, dirs, s=9, marker=model_style.get(key, ("", "", "D"))[2], color=color, linewidths=0, zorder=2)
     published = [(t, r["u"] if r["qc"] != "rejected" else None) for t, r in zip(times, rows)]
     ax_u.plot(*gapped(published), color=buoy, linewidth=1.8, label="Buoy U10 estimate")
     for ax, key in ((ax_u, "u"), (ax_d, "d")):
@@ -259,51 +375,72 @@ def render_png(
         if span:
             ax.set_xlim(min(span), max(span))
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
-    ax_u.legend(loc="upper left", fontsize=7.5, frameon=False, ncol=3)
 
     pairs = [(m["u"], r["u"], r["qc"]) for r, m in zip(rows, matched)
              if r["qc"] != "rejected" and r["u"] is not None and m.get("u") is not None]
-    top = max([4.0] + [max(a, b) + 0.5 for a, b, _ in pairs])
+    model_pairs = stats.get("scatter", {})
+    values = [max(a, b) for a, b, _ in pairs] + [max(a, b) for pts in model_pairs.values() for a, b in pts]
+    top = max([4.0] + [v + 0.5 for v in values])
     ax_sc.plot([0, top], [0, top], color=ref, linestyle="--", linewidth=1)
+    for key, pts in model_pairs.items():
+        if pts:
+            color, _, marker = model_style.get(key, ("#4a3aa7", "-", "D"))
+            ax_sc.scatter(*zip(*pts), s=14, marker=marker, color=color, alpha=0.75, linewidths=0, label=f"{MODELS[key].label} (hourly)")
     for qc, face in (("good", buoy), ("questionable", "white")):
         pts = [(a, b) for a, b, q in pairs if q == qc]
         if pts:
-            ax_sc.scatter(*zip(*pts), s=20, facecolors=face, edgecolors=buoy if face == "white" else "white", linewidths=1, label=f"QC {qc}")
+            ax_sc.scatter(*zip(*pts), s=20, facecolors=face, edgecolors=buoy if face == "white" else "white", linewidths=1, label=f"Buoy, QC {qc}", zorder=3)
     ax_sc.set_xlim(0, top)
     ax_sc.set_ylim(0, top)
     ax_sc.set_aspect("equal")
     ax_sc.set_xlabel(f"{label} observed (m/s)", color=ink, fontsize=9)
-    ax_sc.set_ylabel("Buoy U10 estimate (m/s)", color=ink, fontsize=9)
-    ax_sc.set_title("Buoy vs station", color=ink, fontsize=10, loc="left")
-    if pairs:
-        ax_sc.legend(loc="upper left", fontsize=7.5, frameon=False)
+    ax_sc.set_ylabel("Estimate or model (m/s)", color=ink, fontsize=9)
+    ax_sc.set_title("Wind speed vs station", color=ink, fontsize=10, loc="left")
+    if pairs or any(model_pairs.values()):
+        ax_sc.legend(loc="upper left", fontsize=7, frameon=False)
 
     if not rows:
-        for ax in (ax_h, ax_sc):
+        for ax in (ax_h,):
             ax.text(0.5, 0.5, "No buoy records in this window", transform=ax.transAxes,
                     ha="center", va="center", fontsize=9, color=muted)
+
+    # One shared legend for the time series, beside them.
+    ax_leg.axis("off")
+    handles, labels = ax_u.get_legend_handles_labels()
+    ax_leg.legend(handles, labels, loc="upper left", fontsize=8, frameon=False, title="Time series", title_fontsize=8.5)
+
     ax_tx.axis("off")
 
     def line(name: str, s: dict[str, float] | None, unit: str, digits: int) -> str:
         if not s:
-            return f"{name:<22}  N=0"
+            return f"  {name:<30} N=0"
         r = "" if s.get("r") is None else f"  r={s['r']:.2f}"
-        return f"{name:<22}  N={s['n']:<4} bias={s['bias']:+.{digits}f}{unit}  RMSE={s['rmse']:.{digits}f}{unit}{r}"
+        return f"  {name:<30} N={s['n']:<5} bias={s['bias']:+.{digits}f}{unit:<4} RMSE={s['rmse']:.{digits}f}{unit}{r}"
 
-    text = [
-        "Validation (bias = buoy − station)",
-        line("Speed, QC good", stats.get("speed_good"), " m/s", 2),
-        line("Speed, all published", stats.get("speed_all"), " m/s", 2),
-        line("Direction", stats.get("direction_all"), "°", 0),
-        "",
-        f"Station: {obs.name if obs else 'none'}",
-        f"{obs.height if obs else ''}",
-    ]
+    text = ["Validation   (bias = candidate − reference)"]
+    group = None
+    for row in stats.get("table", []):
+        if row["group"] != group:
+            group = row["group"]
+            text.append(group)
+        speed = row["unit"] == "m/s"
+        text.append(line(row["label"], row["stats"], " m/s" if speed else "°", 2 if speed else 0))
+    notes = [f"Station: {obs.name if obs else 'none'}, {obs.height if obs else ''}"]
     if obs is not None and obs.error:
-        text.append(f"Station unreadable: {obs.error[:70]}")
-    text.append("Land anemometer vs open-water neutral U10:")
-    text.append("a steady offset is expected.")
-    ax_tx.text(0, 1, "\n".join(text), va="top", ha="left", fontsize=8, family="monospace", color=ink)
+        notes.append(f"Station unreadable: {obs.error[:90]}")
+    for key, pair in models.items():
+        cell = (pair.get("buoy") or pair.get("station")).cell
+        notes.append(f"{MODELS[key].label}: nearest water cell {cell.get('distance_km', '?')} km from the buoy; hourly, lead 1-12 h from the latest 00Z/12Z run")
+    notes.append("Land anemometer vs open-water wind: a steady offset is expected.")
+    # Two columns when long, split at the group heading nearest the middle.
+    half = len(text)
+    if len(text) > 14:
+        headings = [k for k, s in enumerate(text) if k and not s.startswith("  ")]
+        half = min(headings, key=lambda k: abs(k - len(text) / 2), default=len(text))
+    ax_tx.text(0, 1, "\n".join(text[:half]), va="top", ha="left", fontsize=7.8, family="monospace", color=ink)
+    if half < len(text):
+        ax_tx.text(0.5, 1, "\n".join(text[half:]), va="top", ha="left", fontsize=7.8, family="monospace", color=ink)
+    ax_tx.text(0, 0.02, "\n".join(notes), va="bottom", ha="left", fontsize=7.5, color=muted)
 
     first = times[0] if times else (obs.times[0] if obs and obs.times else None)
     last = times[-1] if times else (obs.times[-1] if obs and obs.times else None)
@@ -354,8 +491,13 @@ def render_index(output_dir: Path, pages: list[dict[str, Any]]) -> str:
         notice = ('<div class="notice">CDIP could not serve this buoy in the latest run; it may be offline '
                   'or under maintenance. Station observations are still charted.</div>') if error else ""
         speed = (page.get("stats") or {}).get("speed_all")
-        valid = (f'<div class="meta">Against {html.escape(page["obs_name"])}: bias {speed["bias"]:+.2f} m/s, '
+        valid = (f'<div class="meta">Buoy estimate vs {html.escape(page["obs_name"])}: bias {speed["bias"]:+.2f} m/s, '
                  f'RMSE {speed["rmse"]:.2f} m/s, N={speed["n"]}</div>') if speed else ""
+        for row in (page.get("stats") or {}).get("table", []):
+            if row["group"] == "Speed vs station" and row["series"] in MODELS and row["stats"]:
+                s = row["stats"]
+                valid += (f'<div class="meta">{html.escape(row["label"])} vs station: bias {s["bias"]:+.2f} m/s, '
+                          f'RMSE {s["rmse"]:.2f} m/s, N={s["n"]}</div>')
         image = (f'<a href="{html.escape(page["png"])}"><img src="{html.escape(page["png"])}" '
                  f'alt="{html.escape(name)} wind chart" loading="lazy"></a>') if page.get("png") else ""
         png_link = f'<a href="{html.escape(page["png"])}">PNG figure</a>' if page.get("png") else ""
@@ -411,6 +553,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--no-validation", action="store_true", help="Skip fetching station observations.")
     parser.add_argument("--no-png", action="store_true", help="Write the HTML page only.")
+    parser.add_argument("--no-model", action="store_true", help="Skip the WRF model comparison.")
     parser.add_argument(
         "--web-dir",
         type=Path,
@@ -446,15 +589,16 @@ def main() -> int:
     for station_id in args.station_ids or list(VALIDATION_STATIONS):
         rows, station_name = load_rows(args.input, station_id, args.days or None)
         obs = None
+        start, end = plot_window(rows, args.days or None)
         if not args.no_validation:
-            start, end = plot_window(rows, args.days or None)
             obs = fetch_observations(station_id, start, end)
+        models = {} if args.no_model else load_models(station_id, start, end, output_dir / "model")
         has_obs = obs is not None and not obs.error and len(obs.times) >= 2
         if len(rows) < 2 and not has_obs:
             print(f"{station_name}: nothing to plot (need 2 buoy records or station observations).", file=sys.stderr)
             failures += 1
             continue
-        matched, stats = validate(rows, obs)
+        matched, stats = validate(rows, obs, models)
         notices = station_notices(args.status, station_id, obs)
         html_path = output_dir / f"wind_plot_{station_id}.html"
         png_path = output_dir / f"wind_plot_{station_id}.png"
@@ -462,12 +606,12 @@ def main() -> int:
         if png_ok:
             # Render to a temporary name so a failed figure never replaces a good one.
             temporary = png_path.with_suffix(".tmp.png")
-            render_png(temporary, rows, station_id, station_name, obs, matched, stats)
+            render_png(temporary, rows, station_id, station_name, obs, matched, stats, models)
             os.chmod(temporary, 0o644)
             os.replace(temporary, png_path)
             written.append(png_path.name)
         page = render(rows, station_id, station_name, source, notices, obs, matched, stats,
-                      png_name=png_path.name if png_ok else None)
+                      png_name=png_path.name if png_ok else None, models=models)
         atomic_write_text(html_path, page)
         written.insert(0, html_path.name)
         pages.append({"station_id": station_id, "station_name": station_name, "html": html_path.name,
@@ -476,6 +620,9 @@ def main() -> int:
         obs_note = "no station" if obs is None else (f"station error: {obs.error}" if obs.error else f"{len(obs.times)} station readings")
         speed = stats.get("speed_all")
         stat_note = f", speed bias {speed['bias']:+.2f} m/s RMSE {speed['rmse']:.2f}" if speed else ""
+        for row in stats.get("table", []):
+            if row["group"] == "Speed vs station" and row["series"] in MODELS and row["stats"]:
+                stat_note += f", {row['label']} RMSE {row['stats']['rmse']:.2f}"
         print(f"{station_name}: {len(rows)} buoy records, {obs_note}{stat_note} -> {', '.join(written)} in {output_dir}")
 
     if pages:

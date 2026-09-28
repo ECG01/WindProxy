@@ -1,4 +1,5 @@
 import csv
+import math
 import json
 import sys
 import tempfile
@@ -177,3 +178,53 @@ class ValidationWindTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ModelWindTests(unittest.TestCase):
+    def test_file_time_parses_both_name_styles(self):
+        from model_wind import FILE_TIME
+        for name in ("wrfout_d01_2026-09-28_06:00:00.nc", "wrfout_d02_2024-01-02_11-00-00.nc"):
+            self.assertIsNotNone(FILE_TIME.search(name), name)
+
+    def test_plan_prefers_freshest_run_and_falls_back(self):
+        from model_wind import MODELS, plan_hours
+        t = datetime(2026, 9, 28, 13, tzinfo=UTC)
+        catalogs = {
+            "2026092812": {t: "run12/f13.nc"},
+            "2026092800": {t: "run00/f13.nc", t + timedelta(hours=1): "run00/f14.nc"},
+            "2026092712": {},
+        }
+        plan = plan_hours([t, t + timedelta(hours=1), t + timedelta(hours=40)], MODELS["wrf1km"], catalogs)
+        self.assertEqual(plan[t], ("2026092812", 1, "run12/f13.nc"))
+        # 14Z is missing from the 12Z run, so the 00Z run's 14 h lead fills it.
+        self.assertEqual(plan[t + timedelta(hours=1)], ("2026092800", 14, "run00/f14.nc"))
+        self.assertNotIn(t + timedelta(hours=40), plan)
+
+    def test_series_interpolates_and_respects_gaps(self):
+        from model_wind import ModelSeries
+        t = datetime(2026, 9, 28, 0, tzinfo=UTC)
+        series = ModelSeries("wrf1km", "WRF 1 km", [t, t + timedelta(hours=1), t + timedelta(hours=5)],
+                             [0.0, 2.0, 0.0], [-2.0, 0.0, 0.0], {})
+        speed, direction = series.at(t)
+        self.assertAlmostEqual(speed, 2.0)
+        self.assertAlmostEqual(direction, 0.0)  # v = -2: wind from the north
+        speed, _ = series.at(t + timedelta(minutes=30))
+        self.assertAlmostEqual(speed, math.hypot(1.0, -1.0))
+        self.assertIsNone(series.at(t + timedelta(hours=3)))
+
+    def test_validate_scores_models_against_station_and_buoy(self):
+        from model_wind import ModelSeries
+        t = datetime(2026, 9, 25, 12, tzinfo=UTC)
+        rows = [{"t": "2026-09-25T12:00:00Z", "u": 5.0, "d": 90.0, "qc": "good"},
+                {"t": "2026-09-25T12:30:00Z", "u": 5.0, "d": 90.0, "qc": "good"}]
+        obs = observations([(t + timedelta(minutes=m), 4.0, 90.0) for m in range(-30, 90, 10)])
+        # 6 m/s easterly (from 90 deg): u = -6, v = 0.
+        hours = [t, t + timedelta(hours=1)]
+        series = ModelSeries("wrf1km", "WRF 1 km", hours, [-6.0, -6.0], [0.0, 0.0], {})
+        matched, stats = validate(rows, obs, {"wrf1km": {"buoy": series, "station": series}})
+        self.assertAlmostEqual(matched[0]["wrf1km"]["u"], 6.0)
+        table = {(r["group"], r["label"]): r["stats"] for r in stats["table"]}
+        self.assertAlmostEqual(table[("Speed vs station", "WRF 1 km")]["bias"], 2.0)
+        self.assertAlmostEqual(table[("Speed vs buoy estimate", "WRF 1 km")]["bias"], 1.0)
+        self.assertAlmostEqual(table[("Direction vs station", "WRF 1 km")]["bias"], 0.0)
+        self.assertEqual(len(stats["scatter"]["wrf1km"]), 2)

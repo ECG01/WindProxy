@@ -175,6 +175,18 @@ from the nearest CARICOOS weather station, and writes for each buoy:
 | Arecibo `249p1` | CARICOOS WindNet AROP4 | 6 minute m/s readings, anemometer 12 m above site; QARTOD suspect and failed readings are dropped |
 | Rincon `181p1` | CARICOOS Tres Palmas `E9889_TPR` | 10 minute Davis readings published in mph and converted to m/s; sensor height not documented |
 
+The CARICOOS WRF-NMM forecasts (the 1 km domain and the 2 km `d02` nest) are
+scored in the same table and drawn on the same charts. Each hour comes from the
+freshest 00Z or 12Z run at a 1 to 12 hour lead, falling back to an older run
+when a file is missing. Each buoy uses its nearest model water cell and each
+station its nearest cell, and the grid-relative NMM winds are rotated to
+earth-relative. Only the handful of cells around the sites are downloaded, and
+fetched hours are cached in `data/operational/model/`, so a polling run fetches
+only the hours it has not seen; the first run of a new install catches up over
+a few runs. Models are scored against the station hourly, independent of the
+buoy, so the model validation continues while a buoy is offline. Pass
+`--no-model` to skip it.
+
 Station readings are averaged over each 30-minute buoy sample (direction as a
 vector mean) and compared as bias (buoy minus station), RMSE, and correlation,
 separately for `good` records and for every published record. Both stations

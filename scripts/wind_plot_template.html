@@ -10,7 +10,8 @@
 :root{
   --bg:#f5f8fa; --panel:#ffffff; --ink:#0f1a22; --ink-2:#4a5a66; --muted:#6f7f8b;
   --grid:#e2e8ed; --axis:#b9c4cc; --line:#dbe3e9;
-  --s1:#2a78d6; --s2:#eb6834; --ref:#8a98a3; --warn-bg:#fff4e0; --warn-ink:#7a4a00; --warn-dot:#eda100;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --ref:#8a98a3;
+  --warn-bg:#fff4e0; --warn-ink:#7a4a00; --warn-dot:#eda100;
   --good:#1a7f37; --q:#9a6700; --bad:#c62828;
 }
 @media (prefers-color-scheme: dark){
@@ -18,7 +19,8 @@
     color-scheme:dark;
     --bg:#0e151b; --panel:#151f27; --ink:#eef3f6; --ink-2:#a8b7c2; --muted:#8595a1;
     --grid:#223039; --axis:#3a4a55; --line:#26343e;
-    --s1:#3987e5; --s2:#d95926; --ref:#6b7b87; --warn-bg:#2e2410; --warn-ink:#f2c46b; --warn-dot:#c98500;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --ref:#6b7b87;
+    --warn-bg:#2e2410; --warn-ink:#f2c46b; --warn-dot:#c98500;
     --good:#4cc26a; --q:#e0b04a; --bad:#ef6b6b;
   }
 }
@@ -26,7 +28,8 @@
   color-scheme:dark;
   --bg:#0e151b; --panel:#151f27; --ink:#eef3f6; --ink-2:#a8b7c2; --muted:#8595a1;
   --grid:#223039; --axis:#3a4a55; --line:#26343e;
-  --s1:#3987e5; --s2:#d95926; --ref:#6b7b87; --warn-bg:#2e2410; --warn-ink:#f2c46b; --warn-dot:#c98500;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --ref:#6b7b87;
+  --warn-bg:#2e2410; --warn-ink:#f2c46b; --warn-dot:#c98500;
   --good:#4cc26a; --q:#e0b04a; --bad:#ef6b6b;
 }
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.5}
@@ -38,9 +41,9 @@ h1{font-size:28px;font-weight:600;margin:0;text-wrap:balance;letter-spacing:-.01
 .sub{color:var(--ink-2);margin:0;max-width:72ch}
 .notice{display:flex;gap:10px;align-items:flex-start;background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:10px 14px;font-size:14px}
 .notice .dot{width:9px;height:9px;border-radius:50%;background:var(--warn-dot);margin-top:6px;flex:none}
-.readout{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px 20px}
+.readout{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 20px}
 .readout .k{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px}
-.readout .v{font-size:20px;font-weight:500}
+.readout .v{font-size:19px;font-weight:500}
 .readout .v small{font-size:13px;color:var(--ink-2);font-weight:400;margin-left:3px}
 .readout .when{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:13px;color:var(--ink-2);border-top:1px solid var(--line);padding-top:8px}
 .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid currentColor}
@@ -50,20 +53,25 @@ h1{font-size:28px;font-weight:600;margin:0;text-wrap:balance;letter-spacing:-.01
 .panel .hint{font-size:13px;color:var(--ink-2);margin:2px 0 8px;max-width:72ch}
 .panel svg{display:block;width:100%;height:auto;touch-action:pan-y}
 .panel text{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;fill:var(--muted)}
-.valid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px}
-@media (max-width:760px){.valid{grid-template-columns:1fr}}
-.stats{width:100%;border-collapse:collapse;font-size:14px;margin-top:4px}
-.stats th,.stats td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.valid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px}
+@media (max-width:820px){.valid{grid-template-columns:1fr}}
+.stats{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:4px}
+.stats th,.stats td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 .stats th:first-child,.stats td:first-child{text-align:left}
 .stats th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.stats tr.group td{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:14px;border-bottom:none}
+.stats td .name{display:inline-flex;align-items:center;gap:7px}
 .stats-wrap{overflow-x:auto}
 .caveat{font-size:13px;color:var(--ink-2);margin:10px 0 4px}
 .charts{display:flex;flex-direction:column;gap:14px}
 .legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink-2)}
 .legend span{display:inline-flex;align-items:center;gap:7px}
+.panel .legend svg{width:10px;height:10px;flex:none;display:inline-block}
 .sw{width:10px;height:10px;border-radius:50%;background:var(--s1);display:inline-block;flex:none}
 .sw.hollow{background:var(--panel);border:2px solid var(--s1);box-sizing:border-box}
 .sw.obs{background:var(--s2);width:16px;height:3px;border-radius:2px}
+.sw.m1{background:var(--s3);width:16px;height:3px;border-radius:2px}
+.sw.m2{background:none;width:16px;height:0;border-radius:0;border-top:3px dashed var(--s4)}
 .sw.dash{width:18px;height:0;border-radius:0;border-top:2px dashed var(--ref);background:none}
 details{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
 summary{cursor:pointer;font-weight:500}
@@ -76,7 +84,7 @@ table.rows{border-collapse:collapse;font-size:13px;width:100%}
 footer{font-size:12px;color:var(--muted)}
 .nav{display:flex;gap:16px;font-size:13px;margin-bottom:6px}
 a{color:var(--s1);text-underline-offset:3px}
-@media (max-width:520px){h1{font-size:23px}.readout .v{font-size:17px}}
+@media (max-width:520px){h1{font-size:23px}.readout .v{font-size:16px}}
 </style>
 </head>
 <body>
@@ -85,42 +93,45 @@ a{color:var(--s1);text-underline-offset:3px}
     <nav class="nav"><a href="index.html">← All stations</a>__PNG_LINK__</nav>
     <div class="eyebrow">WindProxy · CDIP __STATION_ID__ · __STATION_NAME__, Puerto Rico</div>
     <h1>__STATION_NAME__ Buoy Winds</h1>
-    <p class="sub">Neutral 10&nbsp;m wind estimated from the buoy's wave spectrum, checked against the <span id="obs-name"></span> weather station<span id="span"></span>. Times are UTC.</p>
+    <p class="sub">Neutral 10&nbsp;m wind estimated from the buoy's wave spectrum, compared with the <span id="obs-name"></span> weather station<span id="model-names"></span><span id="span"></span>. Times are UTC.</p>
   </header>
 
 __NOTICES__
   <section class="readout" aria-live="polite">
-    <div><div class="k"><i class="sw"></i>Buoy U10</div><div class="v mono" id="r-u"></div></div>
-    <div><div class="k"><i class="sw obs"></i>Station wind</div><div class="v mono" id="r-su"></div></div>
-    <div><div class="k"><i class="sw"></i>Buoy wind from</div><div class="v mono" id="r-d"></div></div>
-    <div><div class="k"><i class="sw obs"></i>Station wind from</div><div class="v mono" id="r-sd"></div></div>
+    <div><div class="k"><i class="sw"></i>Buoy estimate</div><div class="v mono" id="r-buoy"></div></div>
+    <div><div class="k"><i class="sw obs"></i>Station</div><div class="v mono" id="r-obs"></div></div>
+    <div id="rd-m0" hidden><div class="k"><i class="sw m1"></i><span id="rk-m0"></span></div><div class="v mono" id="r-m0"></div></div>
+    <div id="rd-m1" hidden><div class="k"><i class="sw m2"></i><span id="rk-m1"></span></div><div class="v mono" id="r-m1"></div></div>
     <div><div class="k">Wave height Hs</div><div class="v mono" id="r-hs"></div></div>
     <div class="when"><span class="mono" id="r-t"></span><span id="r-qc"></span><span id="r-why"></span></div>
   </section>
 
   <section class="valid">
     <div class="panel">
-      <h2>Validation against the station</h2>
-      <p class="hint">Station readings averaged over each 30-minute buoy sample. Bias is buoy minus station.</p>
+      <h2>Skill scores</h2>
+      <p class="hint">Bias is candidate minus reference. The buoy estimate is scored on its 30-minute samples, the models hourly; the station is averaged over the same window.</p>
       <div class="stats-wrap"><table class="stats" id="stats"></table></div>
       <p class="caveat" id="caveat"></p>
     </div>
     <div class="panel">
-      <h2>Buoy vs station wind speed</h2>
-      <p class="hint">m/s. Points on the diagonal agree exactly.</p>
-      <svg id="c-sc" role="img" aria-label="Scatter of buoy estimated wind speed against station observed wind speed"></svg>
+      <h2>Wind speed vs station</h2>
+      <p class="hint">m/s. Points on the diagonal agree exactly with the station.</p>
+      <svg id="c-sc" role="img" aria-label="Scatter of buoy estimate and model wind speed against station observed wind speed"></svg>
+      <div class="legend" id="sc-legend" style="margin:6px 0 4px"></div>
     </div>
   </section>
 
-  <div class="legend">
+  <div class="legend" id="legend">
     <span><i class="sw"></i>Buoy estimate, QC good</span>
     <span><i class="sw hollow"></i>Buoy estimate, QC questionable</span>
     <span><i class="sw obs"></i><span id="lg-obs">Station observation</span></span>
+    <span id="lg-m0" hidden><i class="sw m1"></i><span></span></span>
+    <span id="lg-m1" hidden><i class="sw m2"></i><span></span></span>
     <span><i class="sw dash"></i>7 m/s: buoy direction is reliable above this</span>
   </div>
 
   <div class="charts">
-    <section class="panel"><h2>Wind speed</h2><p class="hint">m/s. Buoy neutral U10 against raw station readings. Rejected buoy records leave a gap.</p><svg id="c-u" role="img" aria-label="Wind speed over time"></svg></section>
+    <section class="panel"><h2>Wind speed</h2><p class="hint">m/s. Models are sampled at the buoy. Rejected buoy records leave a gap.</p><svg id="c-u" role="img" aria-label="Wind speed over time"></svg></section>
     <section class="panel"><h2>Wind direction</h2><p class="hint">Degrees true the wind blows from.</p><svg id="c-d" role="img" aria-label="Wind direction over time"></svg></section>
     <section class="panel"><h2>Significant wave height</h2><p class="hint">Hs from the buoy, metres, all records.</p><svg id="c-hs" role="img" aria-label="Significant wave height over time"></svg></section>
   </div>
@@ -128,19 +139,22 @@ __NOTICES__
   <details>
     <summary>Table view (<span id="n"></span> buoy records)</summary>
     <div class="tbl"><table class="rows">
-      <thead><tr><th>Time UTC</th><th>Buoy U10</th><th>Station</th><th>Buoy from °</th><th>Station from °</th><th>Hs m</th><th>QC</th><th>Reason</th></tr></thead>
+      <thead id="th"></thead>
       <tbody id="tb"></tbody>
     </table></div>
   </details>
 
-  <footer>Generated __GEN__ from <span class="mono">__SOURCE__</span> and <span class="mono" id="obs-url"></span>. Method: Mudd et al. (2024), Voermans et al. (2020). Wave data: CDIP, Scripps Institution of Oceanography. Station data: CARICOOS.</footer>
+  <footer>Generated __GEN__ from <span class="mono">__SOURCE__</span> and <span class="mono" id="obs-url"></span>. Method: Mudd et al. (2024), Voermans et al. (2020). Wave data: CDIP, Scripps Institution of Oceanography. Station and WRF model data: CARICOOS.</footer>
 </div>
 
 <script>
 const DATA = __DATA__;
 const rows = DATA.buoy.map((r,i) => ({...r, ms: Date.parse(r.t), m: DATA.matched[i] || {}}));
 const obs = (DATA.obs || []).map(o => ({...o, ms: Date.parse(o.t)}));
+const MODELS = (DATA.models || []).slice(0, 2).map((m, k) => ({...m, k, color: k ? "var(--s4)" : "var(--s3)", dash: k ? "6 4" : null,
+  pts: m.pts.map(p => ({...p, ms: Date.parse(p.t)}))}));
 const META = DATA.meta || {};
+const S = DATA.stats || {};
 const allMs = rows.map(r=>r.ms).concat(obs.map(o=>o.ms));
 const t0 = Math.min(...allMs), t1 = Math.max(...allMs);
 const NS = "http://www.w3.org/2000/svg";
@@ -149,39 +163,51 @@ const compass = d => COMPASS[Math.round(d/22.5)%16];
 const fmtN = (v,p) => v==null ? "—" : v.toFixed(p);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 const iso = ms => new Date(ms).toISOString().slice(0,16).replace("T"," ");
+const wind = (u,d) => u==null ? "—" : fmtN(u,1)+"<small>m/s"+(d==null?"":" · "+Math.round(d)+"° "+compass(d))+"</small>";
 
 document.getElementById("obs-name").textContent = META.name || "nearest";
+document.getElementById("model-names").textContent = MODELS.length ? " and the CARICOOS " + MODELS.map(m=>m.label).join(" and ") + " forecasts" : "";
 document.getElementById("lg-obs").textContent = (META.name || "Station") + " observation";
 document.getElementById("obs-url").textContent = META.url || "no station data";
 document.getElementById("span").textContent = isFinite(t0) ? ", " + iso(t0) + " to " + iso(t1) : "";
 document.getElementById("n").textContent = rows.length;
+MODELS.forEach(m => {
+  const lg = document.getElementById("lg-m"+m.k); lg.hidden = false; lg.querySelector("span").textContent = m.label + " at buoy";
+  document.getElementById("rd-m"+m.k).hidden = false;
+  document.getElementById("rk-m"+m.k).textContent = m.label;
+});
 
-// Validation table
+// Skill table
 (function(){
-  const S = DATA.stats || {};
-  const line = (label, s, unit, r) => s ? `<tr><td>${label}</td><td class="mono">${s.n}</td><td class="mono">${(s.bias>=0?"+":"")+s.bias.toFixed(r)} ${unit}</td><td class="mono">${s.rmse.toFixed(r)} ${unit}</td><td class="mono">${s.r==null||!isFinite(s.r)?"—":s.r.toFixed(2)}</td></tr>` : `<tr><td>${label}</td><td class="mono">0</td><td>—</td><td>—</td><td>—</td></tr>`;
-  document.getElementById("stats").innerHTML =
-    `<thead><tr><th>Comparison</th><th>N</th><th>Bias</th><th>RMSE</th><th>r</th></tr></thead><tbody>` +
-    line("Speed, QC good", S.speed_good, "m/s", 2) +
-    line("Speed, all published", S.speed_all, "m/s", 2) +
-    line("Direction, all published", S.direction_all, "°", 0) + `</tbody>`;
+  const swatch = key => key==="buoy" ? '<i class="sw"></i>' : (MODELS.find(m=>m.key===key) ? `<i class="sw ${MODELS.find(m=>m.key===key).k ? "m2" : "m1"}"></i>` : "");
+  let group = null, out = `<thead><tr><th>Candidate</th><th>N</th><th>Bias</th><th>RMSE</th><th>r</th></tr></thead><tbody>`;
+  for(const row of (S.table || [])){
+    if(row.group !== group){ group = row.group; out += `<tr class="group"><td colspan="5">${esc(group)}</td></tr>`; }
+    const s = row.stats, p = row.unit === "m/s" ? 2 : 0, u = row.unit === "m/s" ? " m/s" : "°";
+    out += `<tr><td><span class="name">${swatch(row.series)}${esc(row.label)}</span></td>` + (s
+      ? `<td class="mono">${s.n}</td><td class="mono">${(s.bias>=0?"+":"")+s.bias.toFixed(p)}${u}</td><td class="mono">${s.rmse.toFixed(p)}${u}</td><td class="mono">${s.r==null?"—":s.r.toFixed(2)}</td>`
+      : `<td class="mono">0</td><td>—</td><td>—</td><td>—</td>`) + `</tr>`;
+  }
+  document.getElementById("stats").innerHTML = out + `</tbody>`;
+  const cells = MODELS.map(m => m.cell && m.cell.distance_km!=null ? `${m.label} uses the nearest water cell, ${m.cell.distance_km} km from the buoy` : "").filter(Boolean);
   document.getElementById("caveat").textContent =
     (META.error ? "Station data could not be read: " + META.error + ". " : "") +
-    "The station is a land anemometer (" + (META.height || "height unknown") +
-    "), not open-water wind at 10 m, so a steady offset is expected. Agreement in timing and trend matters as much as the absolute level.";
+    "The station is a land anemometer (" + (META.height || "height unknown") + "), not open-water wind at 10 m, so a steady offset is expected. " +
+    (MODELS.length ? "Model hours come from the freshest 00Z or 12Z run at a 1 to 12 hour lead. " + cells.join("; ") + "." : "");
 })();
 
-const umax = Math.max(8, Math.ceil(Math.max(0, ...rows.map(r=>r.u||0), ...obs.map(o=>o.u||0)) + 1));
+const modelMax = Math.max(0, ...MODELS.flatMap(m => m.pts.map(p => p.u||0)));
+const umax = Math.max(8, Math.ceil(Math.max(0, modelMax, ...rows.map(r=>r.u||0), ...obs.map(o=>o.u||0)) + 1));
 const hmax = Math.max(0.4, Math.ceil((Math.max(0, ...rows.map(r=>r.hs||0))+0.1)*5)/5);
 function range(a,b,s){const o=[];for(let v=a;v<=b+1e-9;v+=s)o.push(+v.toFixed(6));return o;}
 const CHARTS = [
-  {id:"c-u", key:"u", obsKey:"u", min:0, max:umax, ticks:range(0,umax,umax>12?4:2), fmt:v=>v, line:true, dots:true, ref:7},
-  {id:"c-d", key:"d", obsKey:"d", min:0, max:360, ticks:[0,90,180,270,360], fmt:v=>["N","E","S","W","N"][v/90]+" "+v+"°", line:false, dots:true},
-  {id:"c-hs", key:"hs", obsKey:null, min:0, max:hmax, ticks:range(0,hmax+1e-9,hmax>1?0.5:0.2), fmt:v=>+v.toFixed(1), line:true, dots:false},
+  {id:"c-u", key:"u", min:0, max:umax, ticks:range(0,umax,umax>12?4:2), fmt:v=>v, line:true, dots:true, ref:7, obs:"line", models:"line"},
+  {id:"c-d", key:"d", min:0, max:360, ticks:[0,90,180,270,360], fmt:v=>["N","E","S","W","N"][v/90]+" "+v+"°", line:false, dots:true, obs:"dots", models:"dots"},
+  {id:"c-hs", key:"hs", min:0, max:hmax, ticks:range(0,hmax+1e-9,hmax>1?0.5:0.2), fmt:v=>+v.toFixed(1), line:true, dots:false},
 ];
 const M = {l:58, r:14, t:10, b:26};
 let state = [];
-function el(tag, attrs, parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.appendChild(e); return e; }
+function el(tag, attrs, parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) if(attrs[k]!=null) e.setAttribute(k,attrs[k]); if(parent) parent.appendChild(e); return e; }
 function pathOf(list, key, x, y, gapMs){
   let d="", prev=null;
   for(const r of list){
@@ -198,7 +224,7 @@ function draw(){
   if(!isFinite(t0) || t1<=t0) return;
   for(const c of CHARTS){
     const svg = document.getElementById(c.id);
-    const W = Math.max(300, svg.parentElement.clientWidth - 28), H = W < 520 ? 170 : 200;
+    const W = Math.max(300, svg.parentElement.clientWidth - 28), H = W < 520 ? 170 : 210;
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.innerHTML = "";
     const x = ms => M.l + (ms-t0)/(t1-t0)*(W-M.l-M.r);
     const y = v => H-M.b - (v-c.min)/(c.max-c.min)*(H-M.t-M.b);
@@ -212,18 +238,24 @@ function draw(){
       const d=new Date(ms);
       el("text",{x:x(ms),y:H-8,"text-anchor":"middle"},svg).textContent = d.getUTCHours()===0 ? d.toISOString().slice(5,10) : "12:00";
     }
-    if(c.ref!=null) el("line",{x1:M.l,x2:W-M.r,y1:y(c.ref),y2:y(c.ref),stroke:"var(--ref)","stroke-width":1.5,"stroke-dasharray":"5 4"},svg);
-    if(c.obsKey==="u"){
-      el("path",{d:pathOf(obs,"u",x,y,3600e3),fill:"none",stroke:"var(--s2)","stroke-width":1.5,"stroke-linejoin":"round",opacity:.9},svg);
-    } else if(c.obsKey==="d"){
-      for(const o of obs) if(o.d!=null) el("circle",{cx:x(o.ms),cy:y(o.d),r:2,fill:"var(--s2)",opacity:.75},svg);
+    const clip = el("clipPath",{id:c.id+"-clip"},svg); el("rect",{x:M.l,y:0,width:W-M.l-M.r,height:H},clip);
+    const plot = el("g",{"clip-path":`url(#${c.id}-clip)`},svg);
+    if(c.ref!=null) el("line",{x1:M.l,x2:W-M.r,y1:y(c.ref),y2:y(c.ref),stroke:"var(--ref)","stroke-width":1.5,"stroke-dasharray":"5 4"},plot);
+    if(c.obs==="line") el("path",{d:pathOf(obs,"u",x,y,3600e3),fill:"none",stroke:"var(--s2)","stroke-width":1.5,"stroke-linejoin":"round",opacity:.9},plot);
+    if(c.obs==="dots") for(const o of obs) if(o.d!=null) el("circle",{cx:x(o.ms),cy:y(o.d),r:2,fill:"var(--s2)",opacity:.7},plot);
+    for(const m of MODELS){
+      if(c.models==="line") el("path",{d:pathOf(m.pts,"u",x,y,2*3600e3),fill:"none",stroke:m.color,"stroke-width":1.8,"stroke-dasharray":m.dash,"stroke-linejoin":"round"},plot);
+      if(c.models==="dots") for(const p of m.pts) if(p.d!=null){
+        if(m.k) el("rect",{x:x(p.ms)-2.5,y:y(p.d)-2.5,width:5,height:5,fill:m.color,opacity:.85},plot);
+        else el("path",{d:`M${x(p.ms)},${y(p.d)-3.2}L${x(p.ms)+3},${y(p.d)+2.2}L${x(p.ms)-3},${y(p.d)+2.2}Z`,fill:m.color,opacity:.85},plot);
+      }
     }
-    if(c.line) el("path",{d:pathOf(rows,c.key,x,y,3600e3),fill:"none",stroke:"var(--s1)","stroke-width":2,"stroke-linejoin":"round","stroke-linecap":"round"},svg);
+    if(c.line) el("path",{d:pathOf(rows,c.key,x,y,3600e3),fill:"none",stroke:"var(--s1)","stroke-width":2,"stroke-linejoin":"round","stroke-linecap":"round"},plot);
     if(c.dots){
       for(const r of rows){
         const v=r[c.key]; if(v==null || r.qc==="rejected") continue;
         const good = r.qc==="good";
-        el("circle",{cx:x(r.ms),cy:y(v),r:good?3.5:3.2,fill:good?"var(--s1)":"var(--panel)",stroke:good?"var(--panel)":"var(--s1)","stroke-width":good?1:1.6},svg);
+        el("circle",{cx:x(r.ms),cy:y(v),r:good?3.5:3.2,fill:good?"var(--s1)":"var(--panel)",stroke:good?"var(--panel)":"var(--s1)","stroke-width":good?1:1.6},plot);
       }
     }
     const cross = el("line",{y1:M.t,y2:H-M.b,stroke:"var(--ink-2)","stroke-width":1,opacity:0},svg);
@@ -240,10 +272,11 @@ function draw(){
 
 function drawScatter(){
   const svg = document.getElementById("c-sc");
-  const W = Math.max(260, svg.parentElement.clientWidth - 28), H = Math.min(W, 300);
+  const W = Math.max(260, svg.parentElement.clientWidth - 28), H = Math.min(W, 320);
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.innerHTML = "";
   const pts = rows.filter(r=>r.u!=null && r.qc!=="rejected" && r.m.u!=null);
-  const top = Math.max(4, Math.ceil(Math.max(0, ...pts.map(r=>Math.max(r.u, r.m.u))) + 0.5));
+  const mpts = MODELS.map(m => ({m, pts: ((S.scatter||{})[m.key] || [])}));
+  const top = Math.max(4, Math.ceil(Math.max(0, ...pts.map(r=>Math.max(r.u, r.m.u)), ...mpts.flatMap(g=>g.pts.map(p=>Math.max(p[0],p[1])))) + 0.5));
   const L=42, B=34, T=10, R=12, side = Math.min(W-L-R, H-T-B);
   const x = v => L + v/top*side, y = v => T + side - v/top*side;
   const ticks = range(0, top, top>12?4:top>6?2:1);
@@ -254,13 +287,20 @@ function drawScatter(){
     el("text",{x:x(tv),y:y(0)+15,"text-anchor":"middle"},svg).textContent=tv;
   }
   el("line",{x1:x(0),y1:y(0),x2:x(top),y2:y(top),stroke:"var(--ref)","stroke-width":1.5,"stroke-dasharray":"5 4"},svg);
-  el("text",{x:x(top/2),y:H-4,"text-anchor":"middle"},svg).textContent="Station m/s";
-  const yl = el("text",{x:12,y:y(top/2),"text-anchor":"middle",transform:`rotate(-90 12 ${y(top/2)})`},svg); yl.textContent="Buoy U10 m/s";
-  if(!pts.length){ el("text",{x:x(top/2),y:y(top/2),"text-anchor":"middle"},svg).textContent="No matched records"; return; }
+  el("text",{x:x(top/2),y:T+side+30,"text-anchor":"middle"},svg).textContent="Station m/s";
+  el("text",{x:12,y:y(top/2),"text-anchor":"middle",transform:`rotate(-90 12 ${y(top/2)})`},svg).textContent="Estimate or model m/s";
+  for(const g of mpts) for(const [o,v] of g.pts){
+    if(g.m.k) el("rect",{x:x(o)-2.5,y:y(v)-2.5,width:5,height:5,fill:g.m.color,opacity:.7},svg);
+    else el("path",{d:`M${x(o)},${y(v)-3.2}L${x(o)+3},${y(v)+2.2}L${x(o)-3},${y(v)+2.2}Z`,fill:g.m.color,opacity:.7},svg);
+  }
   for(const r of pts){
     const good = r.qc==="good";
     el("circle",{cx:x(r.m.u),cy:y(r.u),r:3.5,fill:good?"var(--s1)":"var(--panel)",stroke:good?"var(--panel)":"var(--s1)","stroke-width":good?1:1.6},svg);
   }
+  if(!pts.length && !mpts.some(g=>g.pts.length)) el("text",{x:x(top/2),y:y(top/2),"text-anchor":"middle"},svg).textContent="No matched records";
+  document.getElementById("sc-legend").innerHTML =
+    (pts.length ? '<span><i class="sw"></i>Buoy estimate</span>' : "") +
+    mpts.filter(g=>g.pts.length).map(g => `<span><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">${g.m.k ? `<rect x="2" y="2" width="6" height="6" fill="${g.m.color}"/>` : `<path d="M5,1L9,8L1,8Z" fill="${g.m.color}"/>`}</svg>${esc(g.m.label)}, hourly</span>`).join("");
 }
 
 function nearest(list, ms, maxMs){
@@ -276,18 +316,28 @@ function focus(ms){
   for(const s of state){ s.cross.setAttribute("x1",s.x(at)); s.cross.setAttribute("x2",s.x(at)); s.cross.setAttribute("opacity", rest?0:0.6); }
   const rej = !r || r.qc==="rejected";
   const o = r && r.m && (r.m.u!=null || r.m.d!=null) ? r.m : nearest(obs, at, 30*60e3);
-  document.getElementById("r-u").innerHTML = rej||r.u==null ? "—" : fmtN(r.u,1)+"<small>m/s</small>";
-  document.getElementById("r-d").innerHTML = rej||r.d==null ? "—" : Math.round(r.d)+"°<small>"+compass(r.d)+"</small>";
-  document.getElementById("r-su").innerHTML = !o||o.u==null ? "—" : fmtN(o.u,1)+"<small>m/s</small>";
-  document.getElementById("r-sd").innerHTML = !o||o.d==null ? "—" : Math.round(o.d)+"°<small>"+compass(o.d)+"</small>";
+  document.getElementById("r-buoy").innerHTML = rej ? "—" : wind(r.u, r.d);
+  document.getElementById("r-obs").innerHTML = o ? wind(o.u, o.d) : "—";
+  for(const m of MODELS){
+    const v = r && r.m && r.m[m.key] ? r.m[m.key] : nearest(m.pts, at, 40*60e3);
+    document.getElementById("r-m"+m.k).innerHTML = v ? wind(v.u, v.d) : "—";
+  }
   document.getElementById("r-hs").innerHTML = r ? fmtN(r.hs,2)+"<small>m</small>" : "—";
   document.getElementById("r-t").textContent = (rest?"Latest · ":"") + iso(r ? r.ms : at) + " UTC";
   document.getElementById("r-qc").innerHTML = r ? `<span class="pill ${esc(r.qc)}">QC ${esc(r.qc)}</span>` : "No buoy record";
   document.getElementById("r-why").textContent = r && r.why ? r.why.replace(/_/g," ") : "";
 }
 
-document.getElementById("tb").innerHTML = rows.slice().reverse().map(r =>
-  `<tr><td class="mono">${iso(r.ms)}</td><td class="num mono">${r.qc==="rejected"?"—":fmtN(r.u,2)}</td><td class="num mono">${fmtN(r.m.u,2)}</td><td class="num mono">${r.qc==="rejected"||r.d==null?"—":Math.round(r.d)}</td><td class="num mono">${r.m.d==null?"—":Math.round(r.m.d)}</td><td class="num mono">${fmtN(r.hs,2)}</td><td><span class="pill ${esc(r.qc)}">${esc(r.qc)}</span></td><td>${esc((r.why||"").replace(/_/g," "))}</td></tr>`).join("");
+document.getElementById("th").innerHTML = "<tr><th>Time UTC</th><th>Buoy U10</th><th>Station</th>" + MODELS.map(m=>`<th>${esc(m.label)}</th>`).join("") +
+  "<th>Buoy from °</th><th>Station from °</th>" + MODELS.map(m=>`<th>${esc(m.label)} from °</th>`).join("") + "<th>Hs m</th><th>QC</th><th>Reason</th></tr>";
+document.getElementById("tb").innerHTML = rows.slice().reverse().map(r => {
+  const mv = MODELS.map(m => r.m[m.key] || {});
+  return `<tr><td class="mono">${iso(r.ms)}</td><td class="num mono">${r.qc==="rejected"?"—":fmtN(r.u,2)}</td><td class="num mono">${fmtN(r.m.u,2)}</td>` +
+    mv.map(v=>`<td class="num mono">${fmtN(v.u,2)}</td>`).join("") +
+    `<td class="num mono">${r.qc==="rejected"||r.d==null?"—":Math.round(r.d)}</td><td class="num mono">${r.m.d==null?"—":Math.round(r.m.d)}</td>` +
+    mv.map(v=>`<td class="num mono">${v.d==null?"—":Math.round(v.d)}</td>`).join("") +
+    `<td class="num mono">${fmtN(r.hs,2)}</td><td><span class="pill ${esc(r.qc)}">${esc(r.qc)}</span></td><td>${esc((r.why||"").replace(/_/g," "))}</td></tr>`;
+}).join("");
 
 draw();
 let rt; addEventListener("resize", ()=>{ clearTimeout(rt); rt=setTimeout(draw,120); });
